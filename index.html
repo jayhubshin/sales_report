@@ -1,151 +1,194 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EPC 실적 대시보드 - 라이트 테마</title>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <style>
-        :root {
-            --bg-main: #f8fafc;
-            --bg-card: #ffffff;
-            --primary: #2563eb;
-            --text-main: #1e293b;
-            --text-sub: #64748b;
-            --border: #e2e8f0;
-            --accent: #eff6ff;
-        }
-        * { margin:0; padding:0; box-sizing:border-box; font-family: 'Pretendard', -apple-system, sans-serif; }
-        body { background: var(--bg-main); color: var(--text-main); line-height: 1.5; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EPC 통합 실적 대시보드</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+/* 라이트 테마 & 디자인 */
+:root { --bg: #f8fafc; --primary: #2563eb; --border: #e2e8f0; --text: #1e293b; --success: #16a34a; }
+* { margin:0; padding:0; box-sizing:border-box; font-family: 'Pretendard', sans-serif; }
+body { background: var(--bg); color: var(--text); }
+.hd { background: #fff; padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.hd h1 { font-size: 18px; color: var(--primary); font-weight: 800; }
 
-        /* 헤더 */
-        .header { background: #fff; padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-        .header h1 { font-size: 20px; font-weight: 700; color: var(--primary); }
+/* 업로드 영역 */
+.ua { padding: 20px 24px; background: #fff; border-bottom: 1px solid var(--border); }
+.upload-drop-zone { border: 2px dashed #cbd5e1; border-radius: 12px; padding: 30px; text-align: center; cursor: pointer; transition: 0.2s; background: #fdfdfd; }
+.upload-drop-zone:hover { border-color: var(--primary); background: #eff6ff; }
+.upload-drop-zone.active { border-color: var(--success); background: #f0fdf4; }
+.upload-label { font-size: 15px; font-weight: 700; color: #475569; }
+.file-info-list { margin-top: 15px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.file-tag { font-size: 11px; padding: 8px; background: #f1f5f9; border-radius: 6px; border: 1px solid var(--border); line-height: 1.4; }
+.file-tag b { color: var(--primary); display: block; margin-bottom: 2px; }
 
-        /* 필터 섹션 */
-        .filter-bar { background: #fff; padding: 12px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-        .btn-group { display: flex; gap: 4px; background: #f1f5f9; padding: 4px; border-radius: 8px; }
-        .pbtn { padding: 6px 16px; border: none; background: transparent; color: var(--text-sub); cursor: pointer; font-size: 13px; font-weight: 600; border-radius: 6px; transition: 0.2s; }
-        .pbtn.on { background: #fff; color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        
-        .date-input { border: 1px solid var(--border); padding: 6px 10px; border-radius: 6px; font-size: 13px; outline: none; color: var(--text-main); }
-        
-        /* ★ 기간 표시 텍스트 */
-        .range-label { font-size: 14px; font-weight: 700; color: var(--primary); background: var(--accent); padding: 6px 14px; border-radius: 6px; border: 1px solid #dbeafe; }
+/* 필터 영역 */
+.pb { background: #fff; padding: 12px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+.pbtn { padding: 7px 16px; border: 1px solid var(--border); background: #fff; cursor: pointer; border-radius: 8px; font-size: 13px; font-weight: 600; color: #64748b; }
+.pbtn.on { background: var(--primary); color: #fff; border-color: var(--primary); }
+.date-picker { padding: 6px; border: 1px solid var(--border); border-radius: 8px; outline: none; }
+.range-display { font-size: 14px; font-weight: 800; color: var(--primary); background: #eff6ff; padding: 8px 16px; border-radius: 8px; margin-left: auto; }
 
-        /* 메인 컨텐츠 */
-        .container { padding: 24px; max-width: 1400px; margin: 0 auto; }
-        .grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
-        .card { background: #fff; border-radius: 12px; padding: 24px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
-        .card h3 { font-size: 13px; color: var(--text-sub); margin-bottom: 12px; }
-        .card .value { font-size: 28px; font-weight: 800; color: var(--text-main); }
-        
-        /* 파일 업로드 */
-        .upload-area { display: flex; gap: 12px; margin-bottom: 24px; }
-        .upload-box { flex: 1; border: 2px dashed #cbd5e1; border-radius: 10px; padding: 15px; text-align: center; cursor: pointer; background: #fff; }
-        .upload-box.ok { border-color: #22c55e; background: #f0fdf4; }
-        .upload-box label { cursor: pointer; font-size: 14px; font-weight: 600; color: var(--text-sub); }
-        .upload-box input { display: none; }
-    </style>
+/* 요약 카드 */
+.mn { padding: 24px; }
+.g4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+.cd { background: #fff; padding: 24px; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+.cd h3 { font-size: 13px; color: #64748b; margin-bottom: 10px; }
+.cd .v { font-size: 32px; font-weight: 800; }
+</style>
 </head>
 <body>
 
-<div class="header">
-    <h1>📊 EPC 실적 분석 대시보드</h1>
-    <div style="font-size: 13px; color: var(--text-sub);" id="curDate"></div>
+<div class="hd">
+    <h1>📊 EPC 통합 실적 대시보드</h1>
+    <div id="clock" style="font-size: 12px; color: #94a3b8;"></div>
 </div>
 
-<div class="filter-bar">
-    <div class="btn-group">
-        <button class="pbtn" onclick="setPeriod('week', this)">주간 (금~목)</button>
-        <button class="pbtn on" onclick="setPeriod('month', this)">월간</button>
-        <button class="pbtn" onclick="setPeriod('quarter', this)">분기</button>
+<div class="ua">
+    <div class="upload-drop-zone" id="dropZone" onclick="$('folderInput').click()">
+        <div class="upload-label">📁 클릭하여 데이터 폴더 선택 (또는 여러 파일 선택)</div>
+        <p style="font-size:12px; color:#94a3b8; margin-top:5px;">현장목록, 실사목록, 서류목록 키워드가 포함된 최신 파일을 자동 선별합니다.</p>
+        <input type="file" id="folderInput" webkitdirectory directory multiple style="display:none" onchange="handleAutoUpload(this.files)">
     </div>
-    <input type="date" id="baseDate" class="date-input" onchange="refresh()">
-    <div class="range-label" id="dateRangeText">기간 로딩 중...</div>
+    <div class="file-info-list" id="fileList">
+        <div class="file-tag"><b>현장목록</b> 미로드</div>
+        <div class="file-tag"><b>실사목록</b> 미로드</div>
+        <div class="file-tag"><b>서류목록</b> 미로드</div>
+    </div>
 </div>
 
-<div class="container">
-    <div class="upload-area">
-        <div class="upload-box" id="up1"><label for="f1">📁 데이터 파일 업로드<input type="file" id="f1" onchange="loadFile(this)"></label></div>
-    </div>
+<div class="pb">
+    <button class="pbtn" onclick="setMode('week', this)">주간 (금~목)</button>
+    <button class="pbtn on" onclick="setMode('month', this)">월간</button>
+    <button class="pbtn" onclick="setMode('quarter', this)">분기</button>
+    <input type="date" id="selDate" class="date-picker" onchange="render()">
+    <div class="range-display" id="rangeResult">날짜를 선택하세요</div>
+</div>
 
-    <div class="grid">
-        <div class="card">
-            <h3>해당 기간 총 실적</h3>
-            <div class="value" id="mainVal">0건</div>
-        </div>
-        <div class="card">
-            <h3>진행률 (목표 대비)</h3>
-            <div class="value" id="subVal">0%</div>
-        </div>
+<div class="mn">
+    <div class="g4">
+        <div class="cd"><h3>선택 기간 실적 합계</h3><div class="v" id="totalCount">0건</div></div>
+        <div class="cd"><h3>분석 상태</h3><div class="v" style="font-size:18px" id="statusV">파일을 대기 중입니다</div></div>
     </div>
 </div>
 
 <script>
-    let currentMode = 'month';
-    const $ = id => document.getElementById(id);
+let STORE = { '현장목록': [], '실사목록': [], '서류목록': [] };
+let mode = 'month';
+const $ = id => document.getElementById(id);
 
-    // 초기 설정
-    const today = new Date();
-    $('curDate').textContent = `조회 기준일: ${today.toLocaleDateString()}`;
-    $('baseDate').value = today.toISOString().slice(0, 10);
+$('selDate').value = new Date().toISOString().slice(0, 10);
 
-    function setPeriod(mode, btn) {
-        currentMode = mode;
-        document.querySelectorAll('.pbtn').forEach(b => b.classList.remove('on'));
-        btn.classList.add('on');
-        refresh();
-    }
+function setMode(m, el) {
+    mode = m;
+    document.querySelectorAll('.pbtn').forEach(b => b.classList.remove('on'));
+    el.classList.add('on');
+    render();
+}
 
-    /* 금요일-목요일 기준 날짜 계산 로직 */
-    function calculateRange() {
-        const base = new Date($('baseDate').value);
-        let start, end;
+/* 최신 파일 자동 선별 로직 */
+async function handleAutoUpload(files) {
+    const keywords = ['현장목록', '실사목록', '서류목록'];
+    const latestFiles = { '현장목록': null, '실사목록': null, '서류목록': null };
 
-        if (currentMode === 'week') {
-            const day = base.getDay(); // 0(일)~6(토)
-            // 금요일(5)을 기준으로 차이 계산
-            let diff = day >= 5 ? day - 5 : day + 2; 
-            start = new Date(base);
-            start.setDate(base.getDate() - diff);
-            end = new Date(start);
-            end.setDate(start.getDate() + 6);
-        } else if (currentMode === 'month') {
-            start = new Date(base.getFullYear(), base.getMonth(), 1);
-            end = new Date(base.getFullYear(), base.getMonth() + 1, 0);
-        } else {
-            const q = Math.floor(base.getMonth() / 3);
-            start = new Date(base.getFullYear(), q * 3, 1);
-            end = new Date(base.getFullYear(), (q + 1) * 3, 0);
-        }
+    // 1. 키워드별로 가장 마지막에 수정된 파일 찾기
+    Array.from(files).forEach(file => {
+        keywords.forEach(key => {
+            if (file.name.includes(key)) {
+                if (!latestFiles[key] || file.lastModified > latestFiles[key].lastModified) {
+                    latestFiles[key] = file;
+                }
+            }
+        });
+    });
 
-        const format = d => d.toISOString().slice(0, 10);
-        const rangeStr = `${format(start)} ~ ${format(end)}`;
+    // 2. 찾은 파일 읽기 및 UI 업데이트
+    $('fileList').innerHTML = '';
+    let loadCount = 0;
+
+    for (const key of keywords) {
+        const file = latestFiles[key];
+        const tag = document.createElement('div');
+        tag.className = 'file-tag';
         
-        // 화면에 날짜 표시
-        $('dateRangeText').textContent = rangeStr;
-        return { start, end };
-    }
-
-    function refresh() {
-        const range = calculateRange();
-        console.log("분석 기간:", range.start, "~", range.end);
-        // 여기서부터 필터링 로직 구현 가능
-    }
-
-    function loadFile(input) {
-        if(input.files.length > 0) {
-            $('up1').classList.add('ok');
-            $('up1').querySelector('label').textContent = "✅ 파일 로드 완료";
-            refresh();
+        if (file) {
+            tag.innerHTML = `<b>✅ ${key}</b> ${file.name}<br><span style="color:#94a3b8; font-size:10px">${new Date(file.lastModified).toLocaleString()}</span>`;
+            await readExcel(file, key);
+            loadCount++;
+        } else {
+            tag.innerHTML = `<b>❌ ${key}</b> 파일을 찾지 못함`;
         }
+        $('fileList').appendChild(tag);
     }
 
-    // 최초 실행
-    refresh();
-</script>
+    if(loadCount > 0) {
+        $('dropZone').classList.add('active');
+        $('statusV').textContent = "데이터 로드 완료";
+        render();
+    }
+}
 
+function readExcel(file, key) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const wb = XLSX.read(data, {type: 'array'});
+            const raw = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {range: 2}); 
+            STORE[key] = raw;
+            resolve();
+        };
+        reader.readAsArrayBuffer(file);
+    });
+}
+
+/* 금-목 주간/월간/분기 범위 계산 */
+function getRange() {
+    const base = new Date($('selDate').value);
+    let s, e;
+
+    if (mode === 'week') {
+        const day = base.getDay(); 
+        let diff = day >= 5 ? day - 5 : day + 2;
+        s = new Date(base); s.setDate(base.getDate() - diff);
+        e = new Date(s); e.setDate(s.getDate() + 6);
+    } else if (mode === 'month') {
+        s = new Date(base.getFullYear(), base.getMonth(), 1);
+        e = new Date(base.getFullYear(), base.getMonth() + 1, 0);
+    } else {
+        const q = Math.floor(base.getMonth() / 3);
+        s = new Date(base.getFullYear(), q * 3, 1);
+        e = new Date(base.getFullYear(), (q + 1) * 3, 0);
+    }
+    s.setHours(0,0,0,0); e.setHours(23,59,59,999);
+    
+    const f = d => d.toISOString().slice(0, 10);
+    $('rangeResult').textContent = `${f(s)} ~ ${f(e)}`;
+    return { s, e };
+}
+
+function render() {
+    const range = getRange();
+    let total = 0;
+
+    Object.values(STORE).forEach(data => {
+        if (data.length > 0) {
+            const dateKey = Object.keys(data[0]).find(k => k.includes('일') || k.includes('날짜'));
+            if (dateKey) {
+                const filtered = data.filter(row => {
+                    const d = new Date(row[dateKey]);
+                    return d >= range.s && d <= range.e;
+                });
+                total += filtered.length;
+            }
+        }
+    });
+
+    $('totalCount').textContent = total + "건";
+}
+
+setInterval(() => { $('clock').textContent = `현재 시간: ${new Date().toLocaleString()}`; }, 1000);
+</script>
 </body>
 </html>
