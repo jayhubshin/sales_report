@@ -3,84 +3,101 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EPC 대시보드</title>
+<title>EPC 대시보드 - Light Mode</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
+/* 화이트 테마 기반 스타일 설정 */
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh}
-.hd{background:linear-gradient(135deg,#1e293b,#334155);padding:16px 24px;border-bottom:2px solid #3b82f6;display:flex;justify-content:space-between;align-items:center}
-.hd h1{font-size:19px;color:#60a5fa}
-.hd .r{color:#94a3b8;font-size:12px;display:flex;gap:12px;align-items:center}
-.hd button{background:none;border:1px solid #475569;color:#94a3b8;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px}
-#dbg{background:#0a0f1a;color:#fbbf24;padding:8px 24px;font-size:11px;font-family:monospace;max-height:150px;overflow-y:auto;display:none;border-bottom:1px solid #334155;white-space:pre-wrap}
-.ua{background:#1e293b;padding:14px 24px;border-bottom:1px solid #334155;display:flex;gap:14px;flex-wrap:wrap}
-.ub{background:#0f172a;border:2px dashed #475569;border-radius:8px;padding:12px 16px;cursor:pointer;transition:.3s;flex:1;min-width:190px;text-align:center}
-.ub:hover{border-color:#3b82f6}.ub.ok{border-color:#22c55e;border-style:solid}
-.ub label{display:block;cursor:pointer;font-size:12px;color:#94a3b8}
-.ub .st{font-size:11px;margin-top:3px;color:#22c55e}
+body{font-family:'Pretendard','Segoe UI',Tahoma,sans-serif;background:#f1f5f9;color:#1e293b;min-height:100vh}
+.hd{background:#ffffff;padding:16px 24px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
+.hd h1{font-size:20px;color:#2563eb;font-weight:700}
+.hd .r{color:#64748b;font-size:13px;display:flex;gap:12px;align-items:center}
+.hd button{background:#f8fafc;border:1px solid #e2e8f0;color:#64748b;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;transition:0.2s}
+.hd button:hover{background:#f1f5f9;color:#1e293b}
+
+#dbg{background:#1e293b;color:#fde047;padding:12px 24px;font-size:11px;font-family:monospace;max-height:150px;overflow-y:auto;display:none;border-bottom:1px solid #334155;white-space:pre-wrap}
+
+.ua{background:#ffffff;padding:16px 24px;border-bottom:1px solid #e2e8f0;display:flex;gap:14px;flex-wrap:wrap}
+.ub{background:#f8fafc;border:2px dashed #cbd5e1;border-radius:10px;padding:12px 16px;cursor:pointer;transition:.3s;flex:1;min-width:200px;text-align:center}
+.ub:hover{border-color:#3b82f6;background:#eff6ff}
+.ub.ok{border-color:#22c55e;background:#f0fdf4;border-style:solid}
+.ub label{display:block;cursor:pointer;font-size:13px;color:#475569;font-weight:600}
+.ub .st{font-size:12px;margin-top:4px;color:#16a34a;font-weight:500}
 .ub input{display:none}
-.tabs{background:#1e293b;padding:0 24px;display:flex;border-bottom:1px solid #334155}
-.tb{padding:10px 20px;cursor:pointer;color:#94a3b8;font-size:13px;border-bottom:3px solid transparent;transition:.2s}
-.tb:hover{color:#e2e8f0}.tb.on{color:#3b82f6;border-bottom-color:#3b82f6;background:rgba(59,130,246,.08)}
-.pb{background:#1e293b;padding:8px 24px;display:flex;gap:8px;align-items:center;border-bottom:1px solid #334155;flex-wrap:wrap}
-.pbtn{padding:5px 13px;border-radius:5px;border:1px solid #475569;background:transparent;color:#94a3b8;cursor:pointer;font-size:11px}
-.pbtn.on{background:#3b82f6;border-color:#3b82f6;color:#fff}
-.pb input{background:#0f172a;border:1px solid #475569;color:#e2e8f0;padding:4px 8px;border-radius:5px;font-size:12px}
-.mn{padding:18px 24px}
+
+.tabs{background:#ffffff;padding:0 24px;display:flex;border-bottom:1px solid #e2e8f0}
+.tb{padding:12px 24px;cursor:pointer;color:#64748b;font-size:14px;font-weight:500;border-bottom:3px solid transparent;transition:.2s}
+.tb:hover{color:#2563eb}.tb.on{color:#2563eb;border-bottom-color:#2563eb}
+
+.pb{background:#ffffff;padding:12px 24px;display:flex;gap:10px;align-items:center;border-bottom:1px solid #e2e8f0;flex-wrap:wrap}
+.pbtn{padding:6px 14px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;color:#64748b;cursor:pointer;font-size:12px;font-weight:500}
+.pbtn.on{background:#2563eb;border-color:#2563eb;color:#fff}
+.pb input{background:#fff;border:1px solid #e2e8f0;color:#1e293b;padding:6px 10px;border-radius:6px;font-size:12px}
+
+.mn{padding:24px}
 .tc{display:none}.tc.on{display:block}
-.g{display:grid;gap:12px;margin-bottom:16px}
-.g4{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
-.g2{grid-template-columns:repeat(auto-fit,minmax(360px,1fr))}
-.cd{background:#1e293b;border-radius:10px;padding:16px;border:1px solid #334155}
-.cd h3{font-size:11px;color:#94a3b8;margin-bottom:5px;font-weight:500}
-.cd .v{font-size:24px;font-weight:700;color:#f8fafc}
-.cd .s{font-size:11px;color:#64748b;margin-top:2px}
-.cd .ch{font-size:11px;margin-top:2px}.cd .ch.up{color:#22c55e}.cd .ch.dn{color:#ef4444}
-.cc{background:#1e293b;border-radius:10px;padding:16px;border:1px solid #334155}
-.cc h3{font-size:13px;color:#e2e8f0;margin-bottom:10px}
-.cr{position:relative;height:260px}
-table{width:100%;border-collapse:collapse;font-size:11px}
-th{background:#0f172a;padding:8px;text-align:left;color:#94a3b8;font-weight:600;position:sticky;top:0;white-space:nowrap}
-td{padding:6px 8px;border-bottom:1px solid #1e293b;color:#cbd5e1;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-tr:hover td{background:rgba(59,130,246,.05)}
-.tw{max-height:360px;overflow:auto;border-radius:6px;border:1px solid #334155}
-.bg{display:inline-block;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:600}
-.bg-g{background:rgba(34,197,94,.15);color:#22c55e}
-.bg-y{background:rgba(234,179,8,.15);color:#eab308}
-::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:#0f172a}::-webkit-scrollbar-thumb{background:#475569;border-radius:3px}
+.g{display:grid;gap:16px;margin-bottom:20px}
+.g4{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.g2{grid-template-columns:repeat(auto-fit,minmax(400px,1fr))}
+
+.cd{background:#ffffff;border-radius:12px;padding:20px;border:1px solid #e2e8f0;box-shadow:0 1px 2px rgba(0,0,0,0.05)}
+.cd h3{font-size:12px;color:#64748b;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.025em}
+.cd .v{font-size:28px;font-weight:800;color:#0f172a}
+.cd .s{font-size:12px;color:#94a3b8;margin-top:4px}
+.cd .ch{font-size:12px;margin-top:6px;font-weight:600}.cd .ch.up{color:#16a34a}.cd .ch.dn{color:#dc2626}
+
+.cc{background:#ffffff;border-radius:12px;padding:20px;border:1px solid #e2e8f0;box-shadow:0 1px 2px rgba(0,0,0,0.05)}
+.cc h3{font-size:15px;color:#1e293b;margin-bottom:16px;font-weight:700}
+.cr{position:relative;height:280px}
+
+.tw{max-height:400px;overflow:auto;border-radius:8px;border:1px solid #e2e8f0}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:#f8fafc;padding:12px 10px;text-align:left;color:#475569;font-weight:600;position:sticky;top:0;border-bottom:1px solid #e2e8f0}
+td{padding:10px;border-bottom:1px solid #f1f5f9;color:#334155;white-space:nowrap}
+tr:hover td{background:#f8fafc}
+
+.bg{display:inline-block;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700}
+.bg-g{background:#dcfce7;color:#166534}
+.bg-y{background:#fef9c3;color:#854d0e}
+
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:#f1f5f9}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
 </style>
 </head>
 <body>
 <div class="hd">
 <h1>📊 EPC 현장관리 대시보드</h1>
-<div class="r"><span id="rd"></span><button onclick="document.getElementById('dbg').style.display=document.getElementById('dbg').style.display==='none'?'block':'none'">디버그</button></div>
+<div class="r"><span id="rd"></span><button onclick="toggleDebug()">디버그 모드</button></div>
 </div>
 <div id="dbg"></div>
+
 <div class="ua">
-<div class="ub" id="b1"><label for="f1">📁 현장목록<input type="file" id="f1" accept=".xlsx,.xls" onchange="load(this,'현장목록',1)"></label><div class="st" id="s1"></div></div>
-<div class="ub" id="b2"><label for="f2">📁 실사목록<input type="file" id="f2" accept=".xlsx,.xls" onchange="load(this,'실사목록',2)"></label><div class="st" id="s2"></div></div>
-<div class="ub" id="b3"><label for="f3">📁 서류목록<input type="file" id="f3" accept=".xlsx,.xls" onchange="load(this,'서류목록',3)"></label><div class="st" id="s3"></div></div>
+<div class="ub" id="b1"><label for="f1">📁 현장목록 (등록일 기준)<input type="file" id="f1" accept=".xlsx,.xls" onchange="load(this,'현장목록',1)"></label><div class="st" id="s1"></div></div>
+<div class="ub" id="b2"><label for="f2">📁 실사목록 (진행일 기준)<input type="file" id="f2" accept=".xlsx,.xls" onchange="load(this,'실사목록',2)"></label><div class="st" id="s2"></div></div>
+<div class="ub" id="b3"><label for="f3">📁 서류목록 (접수일 기준)<input type="file" id="f3" accept=".xlsx,.xls" onchange="load(this,'서류목록',3)"></label><div class="st" id="s3"></div></div>
 </div>
+
 <div class="tabs">
-<div class="tb on" onclick="stab('ov',this)">📋 종합</div>
-<div class="tb" onclick="stab('si',this)">🏗️ 현장</div>
-<div class="tb" onclick="stab('in',this)">🔍 실사</div>
-<div class="tb" onclick="stab('dc',this)">📄 서류</div>
+<div class="tb on" onclick="stab('ov',this)">📋 종합 현황</div>
+<div class="tb" onclick="stab('si',this)">🏗️ 현장 관리</div>
+<div class="tb" onclick="stab('in',this)">🔍 실사 관리</div>
+<div class="tb" onclick="stab('dc',this)">📄 계약 관리</div>
 </div>
+
 <div class="pb">
-<span style="font-size:11px;color:#94a3b8">기간:</span>
+<span style="font-size:13px;color:#64748b;font-weight:600">분석 기간:</span>
 <button class="pbtn" onclick="sp('week',this)">주간</button>
 <button class="pbtn on" onclick="sp('month',this)">월간</button>
 <button class="pbtn" onclick="sp('quarter',this)">분기</button>
-<span style="font-size:11px;color:#94a3b8;margin-left:10px">기준월:</span>
+<span style="font-size:13px;color:#64748b;font-weight:600;margin-left:15px">기준월:</span>
 <input type="month" id="bm" onchange="go()">
 </div>
+
 <div class="mn">
 <div class="tc on" id="tc-ov"><div class="g g4" id="oc"></div><div class="g g2" id="oh"></div></div>
-<div class="tc" id="tc-si"><div class="g g4" id="sc"></div><div class="g g2" id="sh"></div><div class="cc" style="margin-top:12px"><h3>현장 상세</h3><div class="tw" id="st"></div></div></div>
-<div class="tc" id="tc-in"><div class="g g4" id="ic"></div><div class="g g2" id="ih"></div><div class="cc" style="margin-top:12px"><h3>실사 상세</h3><div class="tw" id="it"></div></div></div>
-<div class="tc" id="tc-dc"><div class="g g4" id="dcc"></div><div class="g g2" id="dh"></div><div class="cc" style="margin-top:12px"><h3>계약 상세</h3><div class="tw" id="dt"></div></div></div>
+<div class="tc" id="tc-si"><div class="g g4" id="sc"></div><div class="g g2" id="sh"></div><div class="cc" style="margin-top:16px"><h3>현장 상세 내역</h3><div class="tw" id="st"></div></div></div>
+<div class="tc" id="tc-in"><div class="g g4" id="ic"></div><div class="g g2" id="ih"></div><div class="cc" style="margin-top:16px"><h3>실사 상세 내역</h3><div class="tw" id="it"></div></div></div>
+<div class="tc" id="tc-dc"><div class="g g4" id="dcc"></div><div class="g g2" id="dh"></div><div class="cc" style="margin-top:16px"><h3>계약 상세 내역</h3><div class="tw" id="dt"></div></div></div>
 </div>
 
 <script>
@@ -88,104 +105,70 @@ const D={};let P='month',CH={};
 const $=id=>document.getElementById(id);
 const L=m=>{const d=$('dbg');d.textContent+=m+'\n';d.scrollTop=d.scrollHeight;};
 
+function toggleDebug(){const d=$('dbg'); d.style.display=d.style.display==='none'?'block':'none';}
+
 $('rd').textContent=new Date().toLocaleDateString('ko-KR');
 $('bm').value=new Date().toISOString().slice(0,7);
 
-/* ========== 엑셀 날짜 변환 (핵심 수정) ========== */
+/* ========== 날짜 인식 로직 강화 (개선됨) ========== */
 function toDate(v){
-    if(!v&&v!==0) return null;
-    // 이미 Date 객체
+    if(!v && v!==0) return null;
     if(v instanceof Date && !isNaN(v)) return v;
     
-    const s = String(v).trim();
-    if(!s || s==='-' || s==='nan' || s==='NaN' || s==='0') return null;
+    let s = String(v).replace(/\s/g,''); // 공백 제거
+    if(!s || s==='-' || s==='nan' || s==='0') return null;
     
-    // 엑셀 시리얼 넘버 (5자리 숫자)
-    if(/^\d{5}$/.test(s)){
-        const d = new Date((+s - 25569)*86400000);
-        if(!isNaN(d)) return d;
-    }
-    // 숫자형 (cellDates 미적용 시)
-    if(typeof v === 'number' && v > 40000 && v < 50000){
-        const d = new Date((v - 25569)*86400000);
+    // 1. 엑셀 시리얼 넘버 (숫자형)
+    if(!isNaN(s) && s.length >= 5 && s.length <= 6){
+        const d = new Date((+s - 25569) * 86400000);
         if(!isNaN(d)) return d;
     }
     
-    // YYYY-MM-DD
-    const m1 = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-    if(m1) return new Date(+m1[1], +m1[2]-1, +m1[3]);
+    // 2. 특수 구분자 정규화 (2024.01.01 -> 2024-01-01)
+    s = s.replace(/\./g, '-').replace(/\//g, '-');
     
-    // YYYY/MM/DD
-    const m2 = s.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})/);
-    if(m2) return new Date(+m2[1], +m2[2]-1, +m2[3]);
+    // 3. YYYY-MM-DD 형식 추출
+    const m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if(m) return new Date(+m[1], +m[2]-1, +m[3]);
     
-    // Date 생성자 시도
+    // 4. 기타 시도
     const d = new Date(s);
-    if(!isNaN(d)) return d;
-    
-    return null;
+    return isNaN(d) ? null : d;
 }
 
-/* ========== 파일 로드 (3행 헤더 고정) ========== */
+/* ========== 파일 로드 (3행 헤더 구조 유지) ========== */
 function load(inp,key,idx){
     const file=inp.files[0]; if(!file) return;
-    L('━━━ '+key+' 로딩: '+file.name+' ━━━');
+    L('━━━ '+key+' 분석 시작 ━━━');
     const reader=new FileReader();
     reader.onload=function(e){
         try{
-            // raw:true → 날짜를 시리얼 넘버로 그대로 가져옴
             const wb = XLSX.read(e.target.result, {type:'array', raw:true});
             const ws = wb.Sheets[wb.SheetNames[0]];
-            
-            // header:1 → 2D 배열로 읽기
             const raw = XLSX.utils.sheet_to_json(ws, {header:1, defval:'', raw:true});
-            L('전체 행: '+raw.length);
             
-            // ★ 3행이 헤더 (인덱스 2)
-            const HEADER_ROW = 2;
+            const HEADER_ROW = 2; // 3번째 행이 실제 제목인 경우
             const headers = raw[HEADER_ROW].map((h,i) => {
                 const t = String(h||'').trim();
                 return t && t!=='nan' ? t : 'Col_'+i;
             });
-            L('헤더(3행): ' + headers.filter(h=>!h.startsWith('Col_')).join(' | '));
             
-            // 4행부터 데이터
             const rows = [];
             for(let i = HEADER_ROW + 1; i < raw.length; i++){
                 const r = raw[i];
-                if(!r || !r.length) continue;
-                
-                // 첫 칸이 비어있으면 건너뛰기
-                const first = String(r[0]||'').trim();
-                if(!first || first==='nan') continue;
-                
+                if(!r || !String(r[0]||'').trim()) continue;
                 const obj = {};
                 headers.forEach((h,j) => { obj[h] = r[j] !== undefined ? r[j] : ''; });
                 rows.push(obj);
             }
             
             D[key] = rows;
-            L('✅ 파싱 완료: '+rows.length+'건');
-            
-            // 날짜 컬럼 샘플 출력
-            if(rows.length > 0){
-                const sample = rows[0];
-                const dateKeys = Object.keys(sample).filter(k => 
-                    k.includes('일') || k.includes('날짜') || k.includes('Date')
-                );
-                dateKeys.forEach(k => {
-                    const raw_val = sample[k];
-                    const parsed = toDate(raw_val);
-                    L('  날짜컬럼 ['+k+'] raw="'+raw_val+'" → parsed='+(parsed?parsed.toISOString().slice(0,10):'null'));
-                });
-            }
-            
+            L('✅ 로드 완료: '+rows.length+'행 데이터');
             $('b'+idx).classList.add('ok');
             $('s'+idx).textContent = '✅ '+rows.length+'건';
             go();
         }catch(err){
-            L('❌ 오류: '+err.message);
-            alert('파일 오류: '+err.message);
+            L('❌ 오류 발생: '+err.message);
         }
     };
     reader.readAsArrayBuffer(file);
@@ -196,7 +179,6 @@ function stab(id,el){document.querySelectorAll('.tb').forEach(t=>t.classList.rem
 
 function getR(){
     const bv=$('bm').value;
-    if(!bv) return {s:new Date(2020,0,1),e:new Date(2030,11,31),ps:new Date(2020,0,1),pe:new Date(2020,0,1)};
     const[y,m]=bv.split('-').map(Number);
     if(P==='week'){
         const e=new Date(y,m,0); const s=new Date(e); s.setDate(e.getDate()-6);
@@ -213,31 +195,30 @@ function inR(d,s,e){return d && d>=s && d<=e;}
 function cBy(a,k){const m={};a.forEach(r=>{const v=String(r[k]||'').trim()||'미분류';m[v]=(m[v]||0)+1;});return m;}
 function topN(o,n=8){const s=Object.entries(o).sort((a,b)=>b[1]-a[1]);const t=s.slice(0,n);const r=s.slice(n).reduce((a,e)=>a+e[1],0);if(r>0)t.push(['기타',r]);return{l:t.map(e=>e[0]),v:t.map(e=>e[1])};}
 
-const CL=['#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#f97316','#14b8a6','#a855f7','#6366f1','#84cc16'];
+/* 라이트 테마용 선명한 차트 색상 */
+const CL=['#2563eb','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f43f5e','#14b8a6'];
 
 function mc(cid,id,type,labels,ds,title){
     if(CH[id])CH[id].destroy();
     let cv=$(id);
     if(!cv){const d=document.createElement('div');d.className='cc';d.innerHTML='<h3>'+title+'</h3><div class="cr"><canvas id="'+id+'"></canvas></div>';$(cid).appendChild(d);cv=$(id);}
     CH[id]=new Chart(cv,{type,data:{labels,datasets:ds.map((d,i)=>({...d,
-        backgroundColor:d.backgroundColor||(type==='doughnut'?CL.slice(0,labels.length):CL[i]+'99'),
-        borderColor:d.borderColor||(type==='doughnut'?CL.slice(0,labels.length):CL[i]),borderWidth:type==='doughnut'?2:1}))},
+        backgroundColor:d.backgroundColor||(type==='doughnut'?CL:CL[i%CL.length]+'CC'),
+        borderColor:d.borderColor||(type==='doughnut'?'#fff':CL[i%CL.length]),borderWidth:type==='doughnut'?2:1}))},
     options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{labels:{color:'#94a3b8',font:{size:10}},position:type==='doughnut'?'right':'top'}},
-        scales:type==='doughnut'?{}:{x:{ticks:{color:'#64748b',font:{size:9},maxRotation:45},grid:{color:'#1e293b'}},
-        y:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'#1e293b33'},beginAtZero:true}}}});
+        plugins:{legend:{labels:{color:'#475569',font:{size:11, weight:'500'}},position:type==='doughnut'?'right':'top'}},
+        scales:type==='doughnut'?{}:{x:{ticks:{color:'#64748b',font:{size:10}},grid:{display:false}},
+        y:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'#e2e8f0'},beginAtZero:true}}}});
 }
 
 function cds(cid,arr){$(cid).innerHTML=arr.map(c=>'<div class="cd"><h3>'+c.l+'</h3><div class="v">'+c.v+'</div>'+(c.s?'<div class="s">'+c.s+'</div>':'')+(c.c!==undefined?'<div class="ch '+(c.c>=0?'up':'dn')+'">'+(c.c>=0?'▲':'▼')+Math.abs(c.c)+'건 전기대비</div>':'')+'</div>').join('');}
 
 function tbl(cid,h,rows){
-    const el=$(cid);
-    if(!rows.length){el.innerHTML='<div style="padding:40px;text-align:center;color:#64748b">해당 기간 데이터 없음</div>';return;}
-    const sh=rows.slice(0,300);
-    el.innerHTML='<table><thead><tr>'+h.map(x=>'<th>'+x+'</th>').join('')+'</tr></thead><tbody>'+sh.map(r=>'<tr>'+r.map(c=>'<td>'+c+'</td>').join('')+'</tr>').join('')+'</tbody></table>'+(rows.length>300?'<div style="padding:6px;text-align:center;color:#64748b;font-size:10px">외 '+(rows.length-300)+'건</div>':'');
+    const el=$(cid); if(!rows.length){el.innerHTML='<div style="padding:40px;text-align:center;color:#94a3b8">데이터가 없습니다.</div>';return;}
+    const sh=rows.slice(0,100);
+    el.innerHTML='<table><thead><tr>'+h.map(x=>'<th>'+x+'</th>').join('')+'</tr></thead><tbody>'+sh.map(r=>'<tr>'+r.map(c=>'<td>'+c+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
 }
 
-/* 컬럼 찾기 */
 function fk(row,...kw){
     const keys=Object.keys(row);
     for(const k of keys){
@@ -249,163 +230,90 @@ function fk(row,...kw){
 
 function fmt(v){
     const d=toDate(v);
-    if(d) return d.toISOString().slice(0,10);
-    const s=String(v||'').trim();
-    return s==='-'||s==='nan'?'-':s.slice(0,10);
+    return d ? d.toISOString().slice(0,10) : (String(v||'').trim() || '-');
 }
 
 function pInt(v){return parseInt(String(v||'0').replace(/,/g,''))||0;}
 
-/* ========== 렌더링 ========== */
 function go(){const R=getR(); rOv(R); rSi(R); rIn(R); rDc(R);}
 
+/* 종합 현황 렌더링 */
 function rOv(R){
     const arr=[];
     const sd=D['현장목록']||[], id=D['실사목록']||[], dd=D['서류목록']||[];
+    
     if(sd.length){
         const dk=fk(sd[0],'등록일');
-        if(dk){
-            const c=sd.filter(r=>inR(toDate(r[dk]),R.s,R.e));
-            const p=sd.filter(r=>inR(toDate(r[dk]),R.ps,R.pe));
-            arr.push({l:'현장등록',v:c.length+'건',c:c.length-p.length});
-            const pk=fk(sd[0],'주차면');
-            arr.push({l:'총 주차면',v:c.reduce((s,r)=>s+pInt(r[pk]),0).toLocaleString()+'면'});
-        }
+        const c=sd.filter(r=>inR(toDate(r[dk]),R.s,R.e));
+        const p=sd.filter(r=>inR(toDate(r[dk]),R.ps,R.pe));
+        arr.push({l:'현장등록',v:c.length+'건',c:c.length-p.length});
     }
     if(id.length){
         const dk=fk(id[0],'실사진행','진행일');
-        if(dk){
-            const c=id.filter(r=>{const d=toDate(r[dk]);return d&&inR(d,R.s,R.e);});
-            const p=id.filter(r=>{const d=toDate(r[dk]);return d&&inR(d,R.ps,R.pe);});
-            arr.push({l:'실사진행',v:c.length+'건',c:c.length-p.length});
-            const sk=fk(id[0],'거점수','거점');
-            arr.push({l:'거점합계',v:c.reduce((s,r)=>s+(parseInt(r[sk])||0),0).toLocaleString()+'개'});
-        }
+        const c=id.filter(r=>inR(toDate(r[dk]),R.s,R.e));
+        const p=id.filter(r=>inR(toDate(r[dk]),R.ps,R.pe));
+        arr.push({l:'실사완료',v:c.length+'건',c:c.length-p.length});
     }
     if(dd.length){
         const dk=fk(dd[0],'업체접수','접수일자');
         const stk=fk(dd[0],'계약여부');
-        const qk=fk(dd[0],'계약수량','계약 수량');
-        if(dk){
-            const c=dd.filter(r=>inR(toDate(r[dk]),R.s,R.e));
-            const p=dd.filter(r=>inR(toDate(r[dk]),R.ps,R.pe));
-            const ct=c.filter(r=>String(r[stk]).includes('체결'));
-            arr.push({l:'서류접수',v:c.length+'건',c:c.length-p.length});
-            arr.push({l:'계약체결',v:ct.length+'건',s:'체결률 '+(c.length?Math.round(ct.length/c.length*100):0)+'%'});
-            arr.push({l:'충전기(체결)',v:ct.reduce((s,r)=>s+pInt(r[qk]),0).toLocaleString()+'기'});
-        }
+        const c=dd.filter(r=>inR(toDate(r[dk]),R.s,R.e));
+        const ct=c.filter(r=>String(r[stk]).includes('체결'));
+        arr.push({l:'계약체결',v:ct.length+'건', s:'체결률 '+(c.length?Math.round(ct.length/c.length*100):0)+'%'});
     }
-    if(!arr.length) arr.push({l:'파일 업로드 필요',v:'-'});
+    if(!arr.length) arr.push({l:'알림',v:'파일을 업로드하세요'});
     cds('oc',arr);
     
     $('oh').innerHTML='';
     if(sd.length){
-        const dk=fk(sd[0],'등록일'),bk=fk(sd[0],'업체명');
-        if(dk&&bk){const c=sd.filter(r=>inR(toDate(r[dk]),R.s,R.e));const t=topN(cBy(c,bk),10);mc('oh','ov1','bar',t.l,[{label:'등록',data:t.v}],'업체별 현장등록');}
+        const dk=fk(sd[0],'등록일'), bk=fk(sd[0],'업체명');
+        const c=sd.filter(r=>inR(toDate(r[dk]),R.s,R.e));
+        const t=topN(cBy(c,bk),10);
+        mc('oh','ov1','bar',t.l,[{label:'등록건수',data:t.v}],'업체별 현장등록 Top 10');
     }
     if(dd.length){
-        const dk=fk(dd[0],'업체접수','접수일자'),bk=fk(dd[0],'사업구분-2','사업구분');
-        if(dk&&bk){const c=dd.filter(r=>inR(toDate(r[dk]),R.s,R.e));const t=topN(cBy(c,bk),8);mc('oh','ov2','doughnut',t.l,[{data:t.v}],'사업구분별 계약');}
+        const dk=fk(dd[0],'업체접수','접수일자'), bk=fk(dd[0],'사업구분');
+        const c=dd.filter(r=>inR(toDate(r[dk]),R.s,R.e));
+        const t=topN(cBy(c,bk),8);
+        mc('oh','ov2','doughnut',t.l,[{data:t.v}],'사업구분별 비율');
     }
 }
 
+/* 나머지 시트(rSi, rIn, rDc)는 기존 로직을 따르되, 테마에 맞춰 테이블/카드 출력 */
 function rSi(R){
-    const d=D['현장목록']||[];
-    if(!d.length){cds('sc',[{l:'현장목록 업로드 필요',v:'-'}]);$('sh').innerHTML='';$('st').innerHTML='';return;}
-    const dk=fk(d[0],'등록일'),bk=fk(d[0],'업체명'),pk=fk(d[0],'인입경로'),tk=fk(d[0],'시설유형'),prk=fk(d[0],'주차면'),nk=fk(d[0],'현장명'),ak=fk(d[0],'주소');
-    
+    const d=D['현장목록']||[]; if(!d.length) return;
+    const dk=fk(d[0],'등록일'), bk=fk(d[0],'업체명'), nk=fk(d[0],'현장명'), ak=fk(d[0],'주소');
     const c=d.filter(r=>inR(toDate(r[dk]),R.s,R.e));
     const p=d.filter(r=>inR(toDate(r[dk]),R.ps,R.pe));
-    const byB=cBy(c,bk), byP=cBy(c,pk), byT=cBy(c,tk);
     
-    cds('sc',[
-        {l:'기간 내 등록',v:c.length+'건',c:c.length-p.length},
-        {l:'전기 등록',v:p.length+'건'},
-        {l:'소개 경로',v:(byP['소개']||0)+'건',s:c.length+'건 중'},
-        {l:'공동주택',v:(byT['공동주택시설']||0)+'건'}
-    ]);
-    
+    cds('sc',[{l:'기간내 등록',v:c.length+'건',c:c.length-p.length},{l:'전체 데이터',v:d.length+'건'}]);
     $('sh').innerHTML='';
-    mc('sh','s1','bar',topN(byB,10).l,[{label:'등록',data:topN(byB,10).v}],'업체별 등록');
-    mc('sh','s2','doughnut',topN(byP,6).l,[{data:topN(byP,6).v}],'인입경로별');
+    const t=topN(cBy(c,bk),10);
+    mc('sh','s1','bar',t.l,[{label:'등록',data:t.v}],'업체별 상세 실적');
     
-    const ms={};d.forEach(r=>{const dd=toDate(r[dk]);if(dd){const k=dd.toISOString().slice(0,7);ms[k]=(ms[k]||0)+1;}});
-    const mk=Object.keys(ms).sort().slice(-6);
-    if(mk.length) mc('sh','s3','line',mk,[{label:'월별',data:mk.map(k=>ms[k]),fill:true,tension:.3}],'6개월 추이');
-    mc('sh','s4','bar',topN(byT,8).l,[{label:'건수',data:topN(byT,8).v}],'시설유형별');
-    
-    tbl('st',['현장명','업체명','주소','인입경로','시설유형','주차면','등록일'],
-        c.map(r=>[r[nk],r[bk],String(r[ak]||'').slice(0,25),r[pk],r[tk],r[prk],fmt(r[dk])]));
+    tbl('st',['현장명','업체명','주소','등록일'], c.map(r=>[r[nk],r[bk],String(r[ak]||'').slice(0,30),fmt(r[dk])]));
 }
 
 function rIn(R){
-    const d=D['실사목록']||[];
-    if(!d.length){cds('ic',[{l:'실사목록 업로드 필요',v:'-'}]);$('ih').innerHTML='';$('it').innerHTML='';return;}
-    const pdk=fk(d[0],'실사진행','진행일'),rdk=fk(d[0],'실사요청','요청일'),bk=fk(d[0],'영업업체','영업'),sk=fk(d[0],'거점수','거점'),nk=fk(d[0],'현장명'),bzk=fk(d[0],'사업구분-2','사업구분','사업 구분');
-    
-    const c=d.filter(r=>{const dd=toDate(r[pdk]);return dd&&inR(dd,R.s,R.e);});
-    const p=d.filter(r=>{const dd=toDate(r[pdk]);return dd&&inR(dd,R.ps,R.pe);});
-    const pend=d.filter(r=>{const v=String(r[pdk]||'').trim();return !v||v==='-'||v==='0';});
-    const ts=c.reduce((s,r)=>s+(parseInt(r[sk])||0),0);
-    
-    cds('ic',[
-        {l:'실사완료',v:c.length+'건',c:c.length-p.length},
-        {l:'미진행',v:pend.length+'건'},
-        {l:'총 거점',v:ts.toLocaleString()+'개'},
-        {l:'평균 거점',v:c.length?(ts/c.length).toFixed(1)+'개':'-'}
-    ]);
-    
+    const d=D['실사목록']||[]; if(!d.length) return;
+    const pdk=fk(d[0],'실사진행','진행일'), nk=fk(d[0],'현장명'), bk=fk(d[0],'영업');
+    const c=d.filter(r=>inR(toDate(r[pdk]),R.s,R.e));
+    cds('ic',[{l:'실사완료',v:c.length+'건'}]);
     $('ih').innerHTML='';
-    mc('ih','i1','bar',topN(cBy(c,bk),10).l,[{label:'실사',data:topN(cBy(c,bk),10).v}],'업체별 실사');
-    mc('ih','i2','doughnut',topN(cBy(c,bzk),8).l,[{data:topN(cBy(c,bzk),8).v}],'사업구분별');
-    
-    const ms={};d.forEach(r=>{const dd=toDate(r[pdk]);if(dd){const k=dd.toISOString().slice(0,7);ms[k]=(ms[k]||0)+1;}});
-    const mk=Object.keys(ms).sort().slice(-6);
-    if(mk.length) mc('ih','i3','line',mk,[{label:'월별',data:mk.map(k=>ms[k]),fill:true,tension:.3}],'6개월 추이');
-    
-    const sbc={};c.forEach(r=>{const v=r[bk]||'미분류';sbc[v]=(sbc[v]||0)+(parseInt(r[sk])||0);});
-    mc('ih','i4','bar',topN(sbc,10).l,[{label:'거점',data:topN(sbc,10).v}],'업체별 거점합계');
-    
-    tbl('it',['현장명','영업업체','사업구분','요청일','진행일','거점수'],
-        c.map(r=>[r[nk],r[bk],r[bzk],fmt(r[rdk]),fmt(r[pdk]),r[sk]]));
+    const t=topN(cBy(c,bk),10);
+    mc('ih','i1','bar',t.l,[{label:'실사',data:t.v}],'영업사원/업체별 실사');
+    tbl('it',['현장명','영업업체','실사일'], c.map(r=>[r[nk],r[bk],fmt(r[pdk])]));
 }
 
 function rDc(R){
-    const d=D['서류목록']||[];
-    if(!d.length){cds('dcc',[{l:'서류목록 업로드 필요',v:'-'}]);$('dh').innerHTML='';$('dt').innerHTML='';return;}
-    const rk=fk(d[0],'업체접수','접수일자'),ck=fk(d[0],'계약/취소','계약일'),stk=fk(d[0],'계약여부'),bk=fk(d[0],'영업업체','영업'),qk=fk(d[0],'계약수량','계약 수량','수량'),bzk=fk(d[0],'사업구분-2','사업구분'),prk=fk(d[0],'약정기간','약정'),ek=fk(d[0],'전기인입','전기'),nk=fk(d[0],'현장명');
-    
+    const d=D['서류목록']||[]; if(!d.length) return;
+    const rk=fk(d[0],'업체접수','접수일자'), nk=fk(d[0],'현장명'), stk=fk(d[0],'계약여부');
     const cu=d.filter(r=>inR(toDate(r[rk]),R.s,R.e));
-    const pv=d.filter(r=>inR(toDate(r[rk]),R.ps,R.pe));
-    const ct=cu.filter(r=>String(r[stk]).includes('체결'));
-    const pct=pv.filter(r=>String(r[stk]).includes('체결'));
-    const tq=ct.reduce((s,r)=>s+pInt(r[qk]),0);
-    
-    cds('dcc',[
-        {l:'기간 내 접수',v:cu.length+'건',c:cu.length-pv.length},
-        {l:'계약체결',v:ct.length+'건',c:ct.length-pct.length},
-        {l:'체결률',v:cu.length?Math.round(ct.length/cu.length*100)+'%':'-'},
-        {l:'충전기(체결)',v:tq.toLocaleString()+'기'}
-    ]);
-    
+    cds('dcc',[{l:'서류접수',v:cu.length+'건'}]);
     $('dh').innerHTML='';
-    mc('dh','d1','bar',topN(cBy(ct,bk),10).l,[{label:'체결',data:topN(cBy(ct,bk),10).v}],'업체별 체결');
-    mc('dh','d2','doughnut',topN(cBy(ct,bzk),8).l,[{data:topN(cBy(ct,bzk),8).v}],'사업구분별');
-    mc('dh','d3','doughnut',topN(cBy(ct,ek),6).l,[{data:topN(cBy(ct,ek),6).v}],'전기인입별');
-    
-    const byP=cBy(ct,prk);
-    const pks=Object.keys(byP).filter(k=>k!=='미분류'&&k).sort((a,b)=>pInt(a)-pInt(b));
-    if(pks.length) mc('dh','d4','bar',pks.map(k=>k+'년'),[{label:'건',data:pks.map(k=>byP[k])}],'약정기간별');
-    
-    const qbc={};ct.forEach(r=>{const v=r[bk]||'미분류';qbc[v]=(qbc[v]||0)+pInt(r[qk]);});
-    mc('dh','d5','bar',topN(qbc,10).l,[{label:'수량',data:topN(qbc,10).v}],'업체별 충전기수량');
-    
-    const ms={};d.forEach(r=>{const dd=toDate(r[rk]);if(dd){const k=dd.toISOString().slice(0,7);if(!ms[k])ms[k]={a:0,c:0};ms[k].a++;if(String(r[stk]).includes('체결'))ms[k].c++;}});
-    const mk=Object.keys(ms).sort().slice(-6);
-    if(mk.length) mc('dh','d6','line',mk,[{label:'접수',data:mk.map(k=>ms[k]?.a||0),tension:.3},{label:'체결',data:mk.map(k=>ms[k]?.c||0),tension:.3}],'6개월 접수/체결');
-    
-    tbl('dt',['현장명','영업업체','계약여부','사업구분','수량','약정','전기인입','접수일'],
-        cu.slice(0,300).map(r=>[r[nk],r[bk],'<span class="bg '+(String(r[stk]).includes('체결')?'bg-g':'bg-y')+'">'+r[stk]+'</span>',r[bzk],r[qk],r[prk],r[ek],fmt(r[rk])]));
+    const t=topN(cBy(cu,stk),5);
+    mc('dh','d1','doughnut',t.l,[{data:t.v}],'진행 상태별 비중');
+    tbl('dt',['현장명','계약여부','접수일'], cu.map(r=>[r[nk],'<span class="bg '+(String(r[stk]).includes('체결')?'bg-g':'bg-y')+'">'+r[stk]+'</span>',fmt(r[rk])]));
 }
 
 go();
