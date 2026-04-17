@@ -1,532 +1,510 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EPC 주간/월간/분기 대시보드</title>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
-        .header { background: linear-gradient(135deg, #1e293b, #334155); padding: 20px 30px; border-bottom: 2px solid #3b82f6; display: flex; justify-content: space-between; align-items: center; }
-        .header h1 { font-size: 22px; color: #60a5fa; }
-        .header .date-info { color: #94a3b8; font-size: 13px; }
-        .upload-section { background: #1e293b; padding: 20px 30px; border-bottom: 1px solid #334155; display: flex; gap: 20px; flex-wrap: wrap; align-items: center; }
-        .upload-box { background: #0f172a; border: 2px dashed #475569; border-radius: 10px; padding: 15px 20px; cursor: pointer; transition: all .3s; flex: 1; min-width: 220px; text-align: center; }
-        .upload-box:hover { border-color: #3b82f6; background: #1a2332; }
-        .upload-box.loaded { border-color: #22c55e; border-style: solid; }
-        .upload-box label { display: block; cursor: pointer; font-size: 13px; color: #94a3b8; }
-        .upload-box .status { font-size: 11px; margin-top: 5px; color: #22c55e; }
-        .upload-box input { display: none; }
-        .tab-bar { background: #1e293b; padding: 0 30px; display: flex; gap: 0; border-bottom: 1px solid #334155; }
-        .tab { padding: 12px 24px; cursor: pointer; color: #94a3b8; font-size: 14px; border-bottom: 3px solid transparent; transition: all .2s; }
-        .tab:hover { color: #e2e8f0; }
-        .tab.active { color: #3b82f6; border-bottom-color: #3b82f6; background: rgba(59,130,246,.08); }
-        .period-bar { background: #1e293b; padding: 10px 30px; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid #334155; }
-        .period-btn { padding: 6px 16px; border-radius: 6px; border: 1px solid #475569; background: transparent; color: #94a3b8; cursor: pointer; font-size: 12px; }
-        .period-btn.active { background: #3b82f6; border-color: #3b82f6; color: #fff; }
-        .period-bar select, .period-bar input { background: #0f172a; border: 1px solid #475569; color: #e2e8f0; padding: 6px 12px; border-radius: 6px; font-size: 12px; }
-        .content { padding: 20px 30px; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .grid { display: grid; gap: 16px; margin-bottom: 20px; }
-        .grid-4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
-        .grid-2 { grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); }
-        .grid-3 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
-        .card { background: #1e293b; border-radius: 12px; padding: 20px; border: 1px solid #334155; }
-        .card h3 { font-size: 13px; color: #94a3b8; margin-bottom: 8px; font-weight: 500; }
-        .card .value { font-size: 28px; font-weight: 700; color: #f8fafc; }
-        .card .sub { font-size: 12px; color: #64748b; margin-top: 4px; }
-        .card .change { font-size: 12px; margin-top: 4px; }
-        .card .change.up { color: #22c55e; }
-        .card .change.down { color: #ef4444; }
-        .chart-card { background: #1e293b; border-radius: 12px; padding: 20px; border: 1px solid #334155; }
-        .chart-card h3 { font-size: 14px; color: #e2e8f0; margin-bottom: 15px; }
-        .chart-container { position: relative; height: 280px; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        th { background: #0f172a; padding: 10px 12px; text-align: left; color: #94a3b8; font-weight: 600; position: sticky; top: 0; }
-        td { padding: 8px 12px; border-bottom: 1px solid #1e293b; color: #cbd5e1; }
-        tr:hover td { background: rgba(59,130,246,.05); }
-        .table-wrap { max-height: 400px; overflow-y: auto; border-radius: 8px; border: 1px solid #334155; }
-        .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
-        .badge-blue { background: rgba(59,130,246,.15); color: #60a5fa; }
-        .badge-green { background: rgba(34,197,94,.15); color: #22c55e; }
-        .badge-yellow { background: rgba(234,179,8,.15); color: #eab308; }
-        .badge-red { background: rgba(239,68,68,.15); color: #ef4444; }
-        .no-data { text-align: center; padding: 60px 20px; color: #64748b; }
-        .no-data .icon { font-size: 48px; margin-bottom: 16px; }
-        .no-data p { font-size: 14px; }
-        .summary-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
-        .summary-chip { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 8px 14px; font-size: 12px; }
-        .summary-chip strong { color: #60a5fa; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EPC 대시보드</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh}
+.header{background:linear-gradient(135deg,#1e293b,#334155);padding:18px 28px;border-bottom:2px solid #3b82f6;display:flex;justify-content:space-between;align-items:center}
+.header h1{font-size:20px;color:#60a5fa}
+.header .dt{color:#94a3b8;font-size:13px}
+.upload-area{background:#1e293b;padding:16px 28px;border-bottom:1px solid #334155;display:flex;gap:16px;flex-wrap:wrap}
+.ubox{background:#0f172a;border:2px dashed #475569;border-radius:10px;padding:14px 18px;cursor:pointer;transition:.3s;flex:1;min-width:200px;text-align:center}
+.ubox:hover{border-color:#3b82f6;background:#1a2332}
+.ubox.ok{border-color:#22c55e;border-style:solid}
+.ubox label{display:block;cursor:pointer;font-size:13px;color:#94a3b8}
+.ubox .st{font-size:11px;margin-top:4px;color:#22c55e}
+.ubox input{display:none}
+.tabs{background:#1e293b;padding:0 28px;display:flex;border-bottom:1px solid #334155}
+.tb{padding:11px 22px;cursor:pointer;color:#94a3b8;font-size:13px;border-bottom:3px solid transparent;transition:.2s}
+.tb:hover{color:#e2e8f0}
+.tb.on{color:#3b82f6;border-bottom-color:#3b82f6;background:rgba(59,130,246,.08)}
+.pbar{background:#1e293b;padding:10px 28px;display:flex;gap:10px;align-items:center;border-bottom:1px solid #334155}
+.pbtn{padding:5px 14px;border-radius:6px;border:1px solid #475569;background:transparent;color:#94a3b8;cursor:pointer;font-size:12px}
+.pbtn.on{background:#3b82f6;border-color:#3b82f6;color:#fff}
+.pbar select,.pbar input{background:#0f172a;border:1px solid #475569;color:#e2e8f0;padding:5px 10px;border-radius:6px;font-size:12px}
+.main{padding:20px 28px}
+.tc{display:none}.tc.on{display:block}
+.g{display:grid;gap:14px;margin-bottom:18px}
+.g4{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+.g2{grid-template-columns:repeat(auto-fit,minmax(380px,1fr))}
+.cd{background:#1e293b;border-radius:10px;padding:18px;border:1px solid #334155}
+.cd h3{font-size:12px;color:#94a3b8;margin-bottom:6px;font-weight:500}
+.cd .v{font-size:26px;font-weight:700;color:#f8fafc}
+.cd .s{font-size:11px;color:#64748b;margin-top:3px}
+.cd .ch{font-size:11px;margin-top:3px}
+.cd .ch.up{color:#22c55e}.cd .ch.dn{color:#ef4444}
+.cc{background:#1e293b;border-radius:10px;padding:18px;border:1px solid #334155}
+.cc h3{font-size:13px;color:#e2e8f0;margin-bottom:12px}
+.ccr{position:relative;height:270px}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{background:#0f172a;padding:9px 10px;text-align:left;color:#94a3b8;font-weight:600;position:sticky;top:0}
+td{padding:7px 10px;border-bottom:1px solid #1e293b;color:#cbd5e1}
+tr:hover td{background:rgba(59,130,246,.05)}
+.tw{max-height:380px;overflow-y:auto;border-radius:8px;border:1px solid #334155}
+.bg{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600}
+.bg-g{background:rgba(34,197,94,.15);color:#22c55e}
+.bg-y{background:rgba(234,179,8,.15);color:#eab308}
+.bg-r{background:rgba(239,68,68,.15);color:#ef4444}
+.nd{text-align:center;padding:50px 20px;color:#64748b;font-size:14px}
+#debugLog{background:#0a0f1a;color:#fbbf24;padding:10px 28px;font-size:11px;font-family:monospace;max-height:120px;overflow-y:auto;display:none;border-bottom:1px solid #334155}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:#0f172a}
+::-webkit-scrollbar-thumb{background:#475569;border-radius:3px}
+</style>
 </head>
 <body>
-    <div class="header">
-        <h1>📊 EPC 현장관리 대시보드</h1>
-        <div class="date-info">보고일: <span id="reportDate"></span></div>
-    </div>
+<div class="header">
+<h1>📊 EPC 현장관리 대시보드</h1>
+<div class="dt">보고일: <span id="rptDate"></span> | <button onclick="toggleDebug()" style="background:none;border:1px solid #475569;color:#94a3b8;padding:2px 8px;border-radius:4px;cursor:pointer;font-size:11px">디버그</button></div>
+</div>
+<div id="debugLog"></div>
 
-    <div class="upload-section">
-        <div class="upload-box" id="box1">
-            <label for="file1">📁 현장목록 (.xlsx)<input type="file" id="file1" accept=".xlsx,.xls" onchange="loadFile(this,'현장목록')"></label>
-            <div class="status" id="status1"></div>
-        </div>
-        <div class="upload-box" id="box2">
-            <label for="file2">📁 실사목록 (.xlsx)<input type="file" id="file2" accept=".xlsx,.xls" onchange="loadFile(this,'실사목록')"></label>
-            <div class="status" id="status2"></div>
-        </div>
-        <div class="upload-box" id="box3">
-            <label for="file3">📁 서류목록 (.xlsx)<input type="file" id="file3" accept=".xlsx,.xls" onchange="loadFile(this,'서류목록')"></label>
-            <div class="status" id="status3"></div>
-        </div>
-    </div>
+<div class="upload-area">
+<div class="ubox" id="b1">
+<label for="f1">📁 현장목록 업로드<input type="file" id="f1" accept=".xlsx,.xls" onchange="loadF(this,'현장목록',1)"></label>
+<div class="st" id="s1"></div>
+</div>
+<div class="ubox" id="b2">
+<label for="f2">📁 실사목록 업로드<input type="file" id="f2" accept=".xlsx,.xls" onchange="loadF(this,'실사목록',2)"></label>
+<div class="st" id="s2"></div>
+</div>
+<div class="ubox" id="b3">
+<label for="f3">📁 서류목록 업로드<input type="file" id="f3" accept=".xlsx,.xls" onchange="loadF(this,'서류목록',3)"></label>
+<div class="st" id="s3"></div>
+</div>
+</div>
 
-    <div class="tab-bar">
-        <div class="tab active" onclick="switchTab('overview')">📋 종합현황</div>
-        <div class="tab" onclick="switchTab('site')">🏗️ 현장목록</div>
-        <div class="tab" onclick="switchTab('inspect')">🔍 실사목록</div>
-        <div class="tab" onclick="switchTab('doc')">📄 서류목록</div>
-    </div>
+<div class="tabs">
+<div class="tb on" onclick="stab('overview',this)">📋 종합현황</div>
+<div class="tb" onclick="stab('site',this)">🏗️ 현장목록</div>
+<div class="tb" onclick="stab('inspect',this)">🔍 실사목록</div>
+<div class="tb" onclick="stab('doc',this)">📄 서류목록</div>
+</div>
 
-    <div class="period-bar">
-        <span style="font-size:12px;color:#94a3b8;">기간:</span>
-        <button class="period-btn" onclick="setPeriod('week')">주간</button>
-        <button class="period-btn active" onclick="setPeriod('month')">월간</button>
-        <button class="period-btn" onclick="setPeriod('quarter')">분기</button>
-        <span style="font-size:12px;color:#94a3b8;margin-left:16px;">기준월:</span>
-        <input type="month" id="baseMonth" onchange="refresh()">
-    </div>
+<div class="pbar">
+<span style="font-size:12px;color:#94a3b8">기간:</span>
+<button class="pbtn" onclick="sp('week',this)">주간</button>
+<button class="pbtn on" onclick="sp('month',this)">월간</button>
+<button class="pbtn" onclick="sp('quarter',this)">분기</button>
+<span style="font-size:12px;color:#94a3b8;margin-left:14px">기준월:</span>
+<input type="month" id="bm" onchange="go()">
+</div>
 
-    <div class="content">
-        <!-- 종합 현황 -->
-        <div class="tab-content active" id="tc-overview">
-            <div class="grid grid-4" id="overviewCards"></div>
-            <div class="grid grid-2" id="overviewCharts"></div>
-        </div>
-
-        <!-- 현장목록 -->
-        <div class="tab-content" id="tc-site">
-            <div class="grid grid-4" id="siteCards"></div>
-            <div class="grid grid-2" id="siteCharts"></div>
-            <div class="chart-card" style="margin-top:16px">
-                <h3>📋 현장 상세 목록 (기간 내 등록)</h3>
-                <div class="table-wrap" id="siteTable"></div>
-            </div>
-        </div>
-
-        <!-- 실사목록 -->
-        <div class="tab-content" id="tc-inspect">
-            <div class="grid grid-4" id="inspectCards"></div>
-            <div class="grid grid-2" id="inspectCharts"></div>
-            <div class="chart-card" style="margin-top:16px">
-                <h3>📋 실사 상세 목록 (기간 내 진행)</h3>
-                <div class="table-wrap" id="inspectTable"></div>
-            </div>
-        </div>
-
-        <!-- 서류목록 -->
-        <div class="tab-content" id="tc-doc">
-            <div class="grid grid-4" id="docCards"></div>
-            <div class="grid grid-2" id="docCharts"></div>
-            <div class="chart-card" style="margin-top:16px">
-                <h3>📋 계약 상세 목록 (기간 내 접수)</h3>
-                <div class="table-wrap" id="docTable"></div>
-            </div>
-        </div>
-    </div>
+<div class="main">
+<div class="tc on" id="tc-overview">
+<div class="g g4" id="oc"></div>
+<div class="g g2" id="och"></div>
+</div>
+<div class="tc" id="tc-site">
+<div class="g g4" id="sc"></div>
+<div class="g g2" id="sch"></div>
+<div class="cc" style="margin-top:14px"><h3>📋 현장 상세</h3><div class="tw" id="stbl"></div></div>
+</div>
+<div class="tc" id="tc-inspect">
+<div class="g g4" id="ic"></div>
+<div class="g g2" id="ich"></div>
+<div class="cc" style="margin-top:14px"><h3>📋 실사 상세</h3><div class="tw" id="itbl"></div></div>
+</div>
+<div class="tc" id="tc-doc">
+<div class="g g4" id="dc"></div>
+<div class="g g2" id="dch"></div>
+<div class="cc" style="margin-top:14px"><h3>📋 계약 상세</h3><div class="tw" id="dtbl"></div></div>
+</div>
+</div>
 
 <script>
-const DATA = {};
-let currentPeriod = 'month';
-let charts = {};
+const D={};let period='month',CHS={};
+const dbg=document.getElementById('debugLog');
+function log(m){dbg.innerHTML+=m+'<br>';dbg.scrollTop=dbg.scrollHeight;}
+function toggleDebug(){dbg.style.display=dbg.style.display==='none'?'block':'none';}
+document.getElementById('rptDate').textContent=new Date().toLocaleDateString('ko-KR');
+document.getElementById('bm').value=new Date().toISOString().slice(0,7);
 
-document.getElementById('reportDate').textContent = new Date().toLocaleDateString('ko-KR');
-document.getElementById('baseMonth').value = new Date().toISOString().slice(0,7);
+function loadF(inp,key,idx){
+const file=inp.files[0];if(!file)return;
+log('📂 '+key+' 파일 로딩: '+file.name);
+const reader=new FileReader();
+reader.onload=function(e){
+try{
+const wb=XLSX.read(e.target.result,{type:'array',cellDates:true});
+const sheetName=wb.SheetNames[0];
+const ws=wb.Sheets[sheetName];
+log('시트명: '+sheetName);
 
-function loadFile(input, key) {
-    const file = input.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const wb = XLSX.read(e.target.result, {type:'array', cellDates:true});
-            const ws = wb.Sheets[wb.SheetNames[0]];
-            const json = XLSX.utils.sheet_to_json(ws, {defval:''});
-            DATA[key] = json;
-            const idx = key === '현장목록' ? 1 : key === '실사목록' ? 2 : 3;
-            document.getElementById('box'+idx).classList.add('loaded');
-            document.getElementById('status'+idx).textContent = `✅ ${json.length}건 로드됨`;
-            refresh();
-        } catch(err) {
-            alert('파일 파싱 오류: ' + err.message);
-        }
-    };
-    reader.readAsArrayBuffer(file);
+// 헤더행 자동 탐지: 실제 컬럼명이 있는 행 찾기
+const rawAll=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
+log('전체 행 수: '+rawAll.length);
+
+let headerRow=-1;
+const searchTerms = key==='현장목록'?['현장명','업체명','등록일']
+    : key==='실사목록'?['현장명','영업','실사']
+    : ['현장명','계약','영업'];
+
+for(let i=0;i<Math.min(10,rawAll.length);i++){
+    const row=rawAll[i].map(c=>String(c||''));
+    const joined=row.join('|');
+    let matchCount=0;
+    searchTerms.forEach(t=>{if(joined.includes(t))matchCount++;});
+    if(matchCount>=2){headerRow=i;break;}
 }
 
-function setPeriod(p) {
-    currentPeriod = p;
-    document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
-    refresh();
+if(headerRow===-1){
+    log('⚠️ 헤더행 자동탐지 실패, 기본값(2) 사용');
+    headerRow=2;
+}
+log('✅ 헤더행 위치: '+(headerRow+1)+'번째 줄');
+log('헤더 내용: '+rawAll[headerRow].slice(0,8).join(' | '));
+
+// 헤더행 이후 데이터를 파싱
+const headers=rawAll[headerRow].map((h,i)=>String(h||'').trim()||('Col_'+i));
+const rows=[];
+for(let i=headerRow+1;i<rawAll.length;i++){
+    const r=rawAll[i];
+    if(!r||r.every(c=>!c&&c!==0))continue;
+    const obj={};
+    headers.forEach((h,j)=>{obj[h]=r[j]!==undefined?r[j]:'';});
+    // 첫번째 유의미한 컬럼이 비어있으면 스킵
+    const firstVal=String(obj[headers[0]]||'').trim();
+    if(!firstVal||firstVal==='nan')return;
+    rows.push(obj);
 }
 
-function switchTab(id) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    event.target.classList.add('active');
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    document.getElementById('tc-'+id).classList.add('active');
+D[key]=rows;
+log('✅ '+key+' 파싱 완료: '+rows.length+'건');
+log('컬럼: '+headers.slice(0,10).join(', '));
+if(rows.length>0) log('샘플1: '+JSON.stringify(rows[0]).slice(0,200));
+
+document.getElementById('b'+idx).classList.add('ok');
+document.getElementById('s'+idx).textContent='✅ '+rows.length+'건 로드';
+go();
+}catch(err){
+log('❌ 파싱 오류: '+err.message);
+alert('파일 파싱 오류: '+err.message);
+}
+};
+reader.readAsArrayBuffer(file);
 }
 
-function getDateRange() {
-    const base = document.getElementById('baseMonth').value;
-    if (!base) return {start: new Date('2020-01-01'), end: new Date('2030-12-31'), prevStart: new Date('2020-01-01'), prevEnd: new Date('2020-01-01')};
-    const [y, m] = base.split('-').map(Number);
-    let start, end, prevStart, prevEnd;
-    if (currentPeriod === 'week') {
-        end = new Date(y, m, 0);
-        start = new Date(end); start.setDate(end.getDate() - 6);
-        prevEnd = new Date(start); prevEnd.setDate(start.getDate() - 1);
-        prevStart = new Date(prevEnd); prevStart.setDate(prevEnd.getDate() - 6);
-    } else if (currentPeriod === 'month') {
-        start = new Date(y, m-1, 1);
-        end = new Date(y, m, 0);
-        prevStart = new Date(y, m-2, 1);
-        prevEnd = new Date(y, m-1, 0);
-    } else {
-        const q = Math.ceil(m / 3);
-        start = new Date(y, (q-1)*3, 1);
-        end = new Date(y, q*3, 0);
-        prevStart = new Date(y, (q-2)*3, 1);
-        prevEnd = new Date(y, (q-1)*3, 0);
-    }
-    return {start, end, prevStart, prevEnd};
+function sp(p,el){period=p;document.querySelectorAll('.pbtn').forEach(b=>b.classList.remove('on'));el.classList.add('on');go();}
+function stab(id,el){document.querySelectorAll('.tb').forEach(t=>t.classList.remove('on'));el.classList.add('on');document.querySelectorAll('.tc').forEach(t=>t.classList.remove('on'));document.getElementById('tc-'+id).classList.add('on');}
+
+function getRange(){
+const base=document.getElementById('bm').value;
+if(!base)return{s:new Date('2020-01-01'),e:new Date('2030-12-31'),ps:new Date('2020-01-01'),pe:new Date('2020-01-01')};
+const[y,m]=base.split('-').map(Number);
+let s,e,ps,pe;
+if(period==='week'){e=new Date(y,m,0);s=new Date(e);s.setDate(e.getDate()-6);pe=new Date(s);pe.setDate(s.getDate()-1);ps=new Date(pe);ps.setDate(pe.getDate()-6);}
+else if(period==='month'){s=new Date(y,m-1,1);e=new Date(y,m,0);ps=new Date(y,m-2,1);pe=new Date(y,m-1,0);}
+else{const q=Math.ceil(m/3);s=new Date(y,(q-1)*3,1);e=new Date(y,q*3,0);ps=new Date(y,(q-2)*3,1);pe=new Date(y,(q-1)*3,0);}
+return{s,e,ps,pe};
 }
 
-function parseDate(v) {
-    if (!v) return null;
-    if (v instanceof Date) return v;
-    const s = String(v).trim();
-    if (s === '-' || s === '' || s === 'nan') return null;
-    const d = new Date(s);
-    return isNaN(d.getTime()) ? null : d;
+function pDate(v){
+if(!v)return null;
+if(v instanceof Date && !isNaN(v))return v;
+const s=String(v).trim();
+if(!s||s==='-'||s==='nan'||s==='NaN')return null;
+// try various formats
+let d=new Date(s);
+if(!isNaN(d))return d;
+// YYYY-MM-DD
+const m1=s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+if(m1)return new Date(+m1[1],+m1[2]-1,+m1[3]);
+return null;
 }
 
-function inRange(d, s, e) {
-    if (!d) return false;
-    return d >= s && d <= e;
+function inR(d,s,e){return d&&d>=s&&d<=e;}
+
+function cntBy(arr,key){
+const m={};arr.forEach(r=>{const v=String(r[key]||'').trim()||'미분류';m[v]=(m[v]||0)+1;});return m;
 }
 
-function countBy(arr, key) {
-    const m = {};
-    arr.forEach(r => { const v = r[key] || '미분류'; m[v] = (m[v]||0) + 1; });
-    return m;
+function topN(obj,n=8){
+const sorted=Object.entries(obj).sort((a,b)=>b[1]-a[1]);
+const top=sorted.slice(0,n);
+const rest=sorted.slice(n).reduce((s,e)=>s+e[1],0);
+if(rest>0)top.push(['기타',rest]);
+return{l:top.map(e=>e[0]),v:top.map(e=>e[1])};
 }
 
-function topN(obj, n=8) {
-    const sorted = Object.entries(obj).sort((a,b) => b[1]-a[1]);
-    const top = sorted.slice(0, n);
-    const rest = sorted.slice(n).reduce((s,e) => s+e[1], 0);
-    if (rest > 0) top.push(['기타', rest]);
-    return {labels: top.map(e=>e[0]), values: top.map(e=>e[1])};
+const COLORS=['#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#f97316','#14b8a6','#a855f7','#6366f1','#84cc16'];
+
+function mc(cid,id,type,labels,datasets,title){
+if(CHS[id])CHS[id].destroy();
+const ct=document.getElementById(cid);
+let cv=document.getElementById(id);
+if(!cv){const d=document.createElement('div');d.className='cc';d.innerHTML='<h3>'+title+'</h3><div class="ccr"><canvas id="'+id+'"></canvas></div>';ct.appendChild(d);cv=document.getElementById(id);}
+CHS[id]=new Chart(cv,{
+type,
+data:{labels,datasets:datasets.map((ds,i)=>({...ds,
+backgroundColor:ds.backgroundColor||(type==='doughnut'||type==='pie'?COLORS.slice(0,labels.length):COLORS[i]+'99'),
+borderColor:ds.borderColor||(type==='doughnut'||type==='pie'?COLORS.slice(0,labels.length):COLORS[i]),
+borderWidth:type==='doughnut'?2:1
+}))},
+options:{responsive:true,maintainAspectRatio:false,
+plugins:{legend:{labels:{color:'#94a3b8',font:{size:10}},position:type==='doughnut'?'right':'top'}},
+scales:type==='doughnut'||type==='pie'?{}:{
+x:{ticks:{color:'#64748b',font:{size:9},maxRotation:45},grid:{color:'#1e293b'}},
+y:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'#1e293b33'},beginAtZero:true}}
+}});
 }
 
-function makeChart(containerId, id, type, labels, datasets, opts={}) {
-    if (charts[id]) charts[id].destroy();
-    const container = document.getElementById(containerId);
-    let canvas = document.getElementById(id);
-    if (!canvas) {
-        const card = document.createElement('div');
-        card.className = 'chart-card';
-        card.innerHTML = `<h3>${opts.title||''}</h3><div class="chart-container"><canvas id="${id}"></canvas></div>`;
-        container.appendChild(card);
-        canvas = document.getElementById(id);
-    }
-    const colors = ['#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#ec4899','#f97316','#14b8a6','#a855f7','#6366f1','#84cc16'];
-    charts[id] = new Chart(canvas, {
-        type,
-        data: {
-            labels,
-            datasets: datasets.map((ds, i) => ({
-                ...ds,
-                backgroundColor: ds.backgroundColor || (type==='doughnut'||type==='pie' ? colors : colors[i] + '99'),
-                borderColor: ds.borderColor || colors[i],
-                borderWidth: type==='doughnut'||type==='pie' ? 2 : 1,
-            }))
-        },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: {
-                legend: { labels: { color: '#94a3b8', font: {size:11} }, position: type==='doughnut'?'right':'top' },
-            },
-            scales: type==='doughnut'||type==='pie' ? {} : {
-                x: { ticks: { color: '#64748b', font:{size:10}, maxRotation:45 }, grid: { color: '#1e293b' } },
-                y: { ticks: { color: '#64748b', font:{size:10} }, grid: { color: '#1e293b33' }, beginAtZero: true }
-            }
-        }
-    });
+function cards(cid,arr){
+document.getElementById(cid).innerHTML=arr.map(c=>'<div class="cd"><h3>'+c.l+'</h3><div class="v">'+c.v+'</div>'+(c.s?'<div class="s">'+c.s+'</div>':'')+(c.c!==undefined?'<div class="ch '+(c.c>=0?'up':'dn')+'">'+(c.c>=0?'▲':'▼')+' '+Math.abs(c.c)+'건 전기대비</div>':'')+'</div>').join('');
 }
 
-function renderCards(containerId, cards) {
-    const el = document.getElementById(containerId);
-    el.innerHTML = cards.map(c => `
-        <div class="card">
-            <h3>${c.label}</h3>
-            <div class="value">${c.value}</div>
-            ${c.sub ? `<div class="sub">${c.sub}</div>` : ''}
-            ${c.change !== undefined ? `<div class="change ${c.change>=0?'up':'down'}">${c.change>=0?'▲':'▼'} ${Math.abs(c.change)}건 (전기대비)</div>` : ''}
-        </div>
-    `).join('');
+function tbl(cid,hds,rows){
+const el=document.getElementById(cid);
+if(!rows.length){el.innerHTML='<div class="nd">해당 기간 데이터 없음</div>';return;}
+const show=rows.slice(0,300);
+el.innerHTML='<table><thead><tr>'+hds.map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>'+show.map(r=>'<tr>'+r.map(c=>'<td>'+c+'</td>').join('')+'</tr>').join('')+'</tbody></table>'+(rows.length>300?'<div style="padding:8px;text-align:center;color:#64748b;font-size:11px">외 '+(rows.length-300)+'건</div>':'');
 }
 
-function renderTable(containerId, headers, rows) {
-    const el = document.getElementById(containerId);
-    if (!rows.length) { el.innerHTML = '<div class="no-data"><p>해당 기간 데이터 없음</p></div>'; return; }
-    const display = rows.slice(0, 200);
-    el.innerHTML = `<table><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${display.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>` + (rows.length > 200 ? `<div style="padding:10px;text-align:center;color:#64748b;font-size:12px;">... 외 ${rows.length-200}건 더 있음</div>` : '');
+function fk(row,...kws){
+for(const key of Object.keys(row)){
+const k=key.replace(/\s/g,'');
+for(const w of kws){if(k.includes(w))return key;}
+}
+return null;
 }
 
-function findCol(row, ...keywords) {
-    for (const key of Object.keys(row)) {
-        const k = String(key).replace(/\s/g,'');
-        for (const kw of keywords) {
-            if (k.includes(kw)) return key;
-        }
-    }
-    return null;
+function fmt(d){
+if(!d)return '-';
+if(d instanceof Date)return d.toISOString().slice(0,10);
+const s=String(d).trim();
+const m=s.match(/\d{4}-\d{2}-\d{2}/);
+return m?m[0]:s.slice(0,10);
 }
 
-function refresh() {
-    const range = getDateRange();
-    refreshOverview(range);
-    refreshSite(range);
-    refreshInspect(range);
-    refreshDoc(range);
+function parseParking(v){
+return parseInt(String(v||'0').replace(/,/g,''))||0;
 }
 
-function refreshOverview(range) {
-    const cards = [];
-    const siteData = DATA['현장목록'] || [];
-    const inspData = DATA['실사목록'] || [];
-    const docData = DATA['서류목록'] || [];
-
-    // Site counts
-    if (siteData.length) {
-        const colDate = findCol(siteData[0], '등록일');
-        const cur = siteData.filter(r => inRange(parseDate(r[colDate]), range.start, range.end));
-        const prev = siteData.filter(r => inRange(parseDate(r[colDate]), range.prevStart, range.prevEnd));
-        cards.push({label:'신규 현장등록', value: cur.length+'건', change: cur.length - prev.length});
-        const colParking = findCol(siteData[0], '주차면');
-        const totalParking = cur.reduce((s,r) => s + (parseInt(String(r[colParking]).replace(/,/g,''))||0), 0);
-        cards.push({label:'총 주차면 수', value: totalParking.toLocaleString()+'면', sub:'기간 내 등록현장'});
-    }
-    if (inspData.length) {
-        const colDate = findCol(inspData[0], '실사진행일');
-        const cur = inspData.filter(r => { const d = parseDate(r[colDate]); return d && inRange(d, range.start, range.end); });
-        const prev = inspData.filter(r => { const d = parseDate(r[colDate]); return d && inRange(d, range.prevStart, range.prevEnd); });
-        cards.push({label:'실사 진행', value: cur.length+'건', change: cur.length - prev.length});
-        const colSpot = findCol(inspData[0], '거점수');
-        const totalSpot = cur.reduce((s,r) => s + (parseInt(r[colSpot])||0), 0);
-        cards.push({label:'총 거점 수', value: totalSpot.toLocaleString()+'개', sub:'실사 완료건'});
-    }
-    if (docData.length) {
-        const colDate = findCol(docData[0], '업체접수일자', '접수일자');
-        const colStatus = findCol(docData[0], '계약여부');
-        const colQty = findCol(docData[0], '계약수량', '수량');
-        const cur = docData.filter(r => inRange(parseDate(r[colDate]), range.start, range.end));
-        const prev = docData.filter(r => inRange(parseDate(r[colDate]), range.prevStart, range.prevEnd));
-        const contracted = cur.filter(r => String(r[colStatus]).includes('체결'));
-        cards.push({label:'서류 접수', value: cur.length+'건', change: cur.length - prev.length});
-        cards.push({label:'계약 체결', value: contracted.length+'건', sub: `체결률 ${cur.length?Math.round(contracted.length/cur.length*100):0}%`});
-        const totalQty = contracted.reduce((s,r) => s + (parseInt(r[colQty])||0), 0);
-        cards.push({label:'계약 충전기 수량', value: totalQty.toLocaleString()+'기', sub:'체결건 합산'});
-    }
-    if (!cards.length) cards.push({label:'데이터 없음', value:'-', sub:'파일을 업로드하세요'});
-    renderCards('overviewCards', cards);
-
-    // Charts
-    document.getElementById('overviewCharts').innerHTML = '';
-    if (siteData.length) {
-        const colDate = findCol(siteData[0], '등록일');
-        const colCompany = findCol(siteData[0], '업체명');
-        const cur = siteData.filter(r => inRange(parseDate(r[colDate]), range.start, range.end));
-        const byCompany = topN(countBy(cur, colCompany), 10);
-        makeChart('overviewCharts','ov-company','bar', byCompany.labels, [{label:'현장등록 수', data:byCompany.values}], {title:'업체별 현장등록 현황'});
-    }
-    if (docData.length) {
-        const colDate = findCol(docData[0], '업체접수일자', '접수일자');
-        const colBiz = findCol(docData[0], '사업구분-2');
-        const cur = docData.filter(r => inRange(parseDate(r[colDate]), range.start, range.end));
-        const byBiz = topN(countBy(cur, colBiz), 8);
-        makeChart('overviewCharts','ov-biz','doughnut', byBiz.labels, [{data:byBiz.values}], {title:'사업구분별 계약 현황'});
-    }
+function go(){
+const R=getRange();
+doOverview(R);doSite(R);doInspect(R);doDoc(R);
 }
 
-function refreshSite(range) {
-    const data = DATA['현장목록'] || [];
-    if (!data.length) { renderCards('siteCards',[{label:'데이터 없음',value:'-',sub:'현장목록 파일 업로드 필요'}]); document.getElementById('siteCharts').innerHTML=''; document.getElementById('siteTable').innerHTML=''; return; }
-    const colDate = findCol(data[0], '등록일');
-    const colCompany = findCol(data[0], '업체명');
-    const colPath = findCol(data[0], '인입경로');
-    const colType = findCol(data[0], '시설유형');
-    const colParking = findCol(data[0], '주차면');
-    const colName = findCol(data[0], '현장명');
-    const colAddr = findCol(data[0], '주소');
+function doOverview(R){
+const cs=[];
+const sd=D['현장목록']||[], id=D['실사목록']||[], dd=D['서류목록']||[];
+if(sd.length){
+const ck=fk(sd[0],'등록일');
+if(ck){
+const cur=sd.filter(r=>inR(pDate(r[ck]),R.s,R.e));
+const prev=sd.filter(r=>inR(pDate(r[ck]),R.ps,R.pe));
+cs.push({l:'신규 현장등록',v:cur.length+'건',c:cur.length-prev.length});
+const pk=fk(sd[0],'주차면');
+const tp=cur.reduce((s,r)=>s+parseParking(r[pk]),0);
+cs.push({l:'총 주차면 수',v:tp.toLocaleString()+'면',s:'기간 내 등록'});
+}
+}
+if(id.length){
+const ck=fk(id[0],'실사진행일','진행일');
+if(ck){
+const cur=id.filter(r=>{const d=pDate(r[ck]);return d&&inR(d,R.s,R.e);});
+const prev=id.filter(r=>{const d=pDate(r[ck]);return d&&inR(d,R.ps,R.pe);});
+cs.push({l:'실사 진행',v:cur.length+'건',c:cur.length-prev.length});
+const sk=fk(id[0],'거점수','거점');
+const ts=cur.reduce((s,r)=>s+(parseInt(r[sk])||0),0);
+cs.push({l:'총 거점 수',v:ts.toLocaleString()+'개'});
+}
+}
+if(dd.length){
+const ck=fk(dd[0],'업체접수일자','접수일자');
+const stk=fk(dd[0],'계약여부');
+const qk=fk(dd[0],'계약수량','수량');
+if(ck){
+const cur=dd.filter(r=>inR(pDate(r[ck]),R.s,R.e));
+const prev=dd.filter(r=>inR(pDate(r[ck]),R.ps,R.pe));
+const ct=cur.filter(r=>String(r[stk]).includes('체결'));
+cs.push({l:'서류 접수',v:cur.length+'건',c:cur.length-prev.length});
+cs.push({l:'계약 체결',v:ct.length+'건',s:'체결률 '+(cur.length?Math.round(ct.length/cur.length*100):0)+'%'});
+const tq=ct.reduce((s,r)=>s+(parseInt(r[qk])||0),0);
+cs.push({l:'계약 충전기',v:tq.toLocaleString()+'기'});
+}
+}
+if(!cs.length)cs.push({l:'데이터 없음',v:'-',s:'파일 업로드 필요'});
+cards('oc',cs);
 
-    const cur = data.filter(r => inRange(parseDate(r[colDate]), range.start, range.end));
-    const prev = data.filter(r => inRange(parseDate(r[colDate]), range.prevStart, range.prevEnd));
-
-    const byCompany = countBy(cur, colCompany);
-    const byPath = countBy(cur, colPath);
-    const byType = countBy(cur, colType);
-
-    renderCards('siteCards', [
-        {label:'기간 내 등록', value:cur.length+'건', change: cur.length - prev.length},
-        {label:'전기대비', value:prev.length+'건', sub:'이전 기간'},
-        {label:'소개 경로', value:(byPath['소개']||0)+'건', sub:`전체 ${cur.length}건 중`},
-        {label:'공동주택시설', value:(byType['공동주택시설']||0)+'건'}
-    ]);
-
-    document.getElementById('siteCharts').innerHTML = '';
-    const tc = topN(byCompany, 10);
-    makeChart('siteCharts','s-company','bar', tc.labels, [{label:'등록 수', data:tc.values}], {title:'업체별 현장등록 현황'});
-    const tp = topN(byPath, 6);
-    makeChart('siteCharts','s-path','doughnut', tp.labels, [{data:tp.values}], {title:'인입경로별 분포'});
-
-    // 월별 추이
-    const months = {};
-    data.forEach(r => { const d = parseDate(r[colDate]); if(d){ const k = d.toISOString().slice(0,7); months[k]=(months[k]||0)+1; }});
-    const mk = Object.keys(months).sort().slice(-6);
-    makeChart('siteCharts','s-trend','line', mk, [{label:'월별 등록', data:mk.map(k=>months[k]), fill:true, tension:.3}], {title:'최근 6개월 등록 추이'});
-
-    const tt = topN(byType, 8);
-    makeChart('siteCharts','s-type','bar', tt.labels, [{label:'시설수', data:tt.values}], {title:'시설유형별 분포'});
-
-    renderTable('siteTable', ['현장명','업체명','주소','인입경로','시설유형','주차면','등록일'],
-        cur.map(r => [r[colName],r[colCompany],r[colAddr],r[colPath],r[colType],r[colParking],String(r[colDate]).slice(0,10)])
-    );
+document.getElementById('och').innerHTML='';
+if(sd.length){
+const ck=fk(sd[0],'등록일');
+const bk=fk(sd[0],'업체명');
+if(ck&&bk){
+const cur=sd.filter(r=>inR(pDate(r[ck]),R.s,R.e));
+const t=topN(cntBy(cur,bk),10);
+mc('och','ov1','bar',t.l,[{label:'현장등록',data:t.v}],'업체별 현장등록');
+}
+}
+if(dd.length){
+const ck=fk(dd[0],'업체접수일자','접수일자');
+const bk=fk(dd[0],'사업구분-2','사업구분');
+if(ck&&bk){
+const cur=dd.filter(r=>inR(pDate(r[ck]),R.s,R.e));
+const t=topN(cntBy(cur,bk),8);
+mc('och','ov2','doughnut',t.l,[{data:t.v}],'사업구분별 계약');
+}
+}
 }
 
-function refreshInspect(range) {
-    const data = DATA['실사목록'] || [];
-    if (!data.length) { renderCards('inspectCards',[{label:'데이터 없음',value:'-',sub:'실사목록 파일 업로드 필요'}]); document.getElementById('inspectCharts').innerHTML=''; document.getElementById('inspectTable').innerHTML=''; return; }
-    const colPDate = findCol(data[0], '실사진행일');
-    const colRDate = findCol(data[0], '실사요청일');
-    const colCompany = findCol(data[0], '영업업체명', '영업');
-    const colSpot = findCol(data[0], '거점수');
-    const colName = findCol(data[0], '현장명');
-    const colBiz = findCol(data[0], '사업구분-2', '사업');
+function doSite(R){
+const sd=D['현장목록']||[];
+if(!sd.length){cards('sc',[{l:'데이터 없음',v:'-',s:'현장목록 업로드 필요'}]);document.getElementById('sch').innerHTML='';document.getElementById('stbl').innerHTML='';return;}
+const ck=fk(sd[0],'등록일');
+const bk=fk(sd[0],'업체명');
+const pk=fk(sd[0],'인입경로');
+const tk=fk(sd[0],'시설유형');
+const prk=fk(sd[0],'주차면');
+const nk=fk(sd[0],'현장명');
+const ak=fk(sd[0],'주소');
 
-    const cur = data.filter(r => { const d = parseDate(r[colPDate]); return d && inRange(d, range.start, range.end); });
-    const prev = data.filter(r => { const d = parseDate(r[colPDate]); return d && inRange(d, range.prevStart, range.prevEnd); });
-    const pending = data.filter(r => !parseDate(r[colPDate]) || String(r[colPDate]).trim()==='-');
-    const totalSpot = cur.reduce((s,r) => s + (parseInt(r[colSpot])||0), 0);
+log('현장목록 컬럼매핑: 등록일='+ck+', 업체명='+bk+', 인입경로='+pk);
 
-    renderCards('inspectCards', [
-        {label:'실사 완료', value:cur.length+'건', change: cur.length - prev.length},
-        {label:'미진행(대기)', value:pending.length+'건'},
-        {label:'총 거점 수', value:totalSpot.toLocaleString()+'개'},
-        {label:'건당 평균 거점', value: cur.length ? (totalSpot/cur.length).toFixed(1)+'개' : '-'}
-    ]);
+const cur=sd.filter(r=>inR(pDate(r[ck]),R.s,R.e));
+const prev=sd.filter(r=>inR(pDate(r[ck]),R.ps,R.pe));
+const byC=cntBy(cur,bk);
+const byP=cntBy(cur,pk);
+const byT=cntBy(cur,tk);
 
-    document.getElementById('inspectCharts').innerHTML = '';
-    const byCompany = topN(countBy(cur, colCompany), 10);
-    makeChart('inspectCharts','i-company','bar', byCompany.labels, [{label:'실사 수', data:byCompany.values}], {title:'영업업체별 실사 진행'});
+cards('sc',[
+{l:'기간 내 등록',v:cur.length+'건',c:cur.length-prev.length},
+{l:'전기 등록',v:prev.length+'건',s:'이전 기간'},
+{l:'소개 경로',v:(byP['소개']||0)+'건',s:'전체 중'},
+{l:'공동주택시설',v:(byT['공동주택시설']||0)+'건'}
+]);
 
-    const byBiz = topN(countBy(cur, colBiz), 8);
-    makeChart('inspectCharts','i-biz','doughnut', byBiz.labels, [{data:byBiz.values}], {title:'사업구분별 실사'});
+document.getElementById('sch').innerHTML='';
+const tc=topN(byC,10);
+mc('sch','s1','bar',tc.l,[{label:'등록 수',data:tc.v}],'업체별 현장등록');
+const tp=topN(byP,6);
+mc('sch','s2','doughnut',tp.l,[{data:tp.v}],'인입경로별 분포');
 
-    const months = {};
-    data.forEach(r => { const d = parseDate(r[colPDate]); if(d){ const k = d.toISOString().slice(0,7); months[k]=(months[k]||0)+1; }});
-    const mk = Object.keys(months).sort().slice(-6);
-    makeChart('inspectCharts','i-trend','line', mk, [{label:'월별 실사', data:mk.map(k=>months[k]), fill:true, tension:.3}], {title:'최근 6개월 실사 추이'});
+// 월별 추이
+const ms={};
+sd.forEach(r=>{const d=pDate(r[ck]);if(d){const k=d.toISOString().slice(0,7);ms[k]=(ms[k]||0)+1;}});
+const mk=Object.keys(ms).sort().slice(-6);
+if(mk.length)mc('sch','s3','line',mk,[{label:'월별 등록',data:mk.map(k=>ms[k]),fill:true,tension:.3}],'최근 6개월 등록 추이');
 
-    // 거점수 분포 by company
-    const spotByCompany = {};
-    cur.forEach(r => { const c = r[colCompany]||'미분류'; spotByCompany[c] = (spotByCompany[c]||0) + (parseInt(r[colSpot])||0); });
-    const sc = topN(spotByCompany, 10);
-    makeChart('inspectCharts','i-spot','bar', sc.labels, [{label:'거점 수', data:sc.values}], {title:'업체별 거점 수 합계'});
+const tt=topN(byT,8);
+mc('sch','s4','bar',tt.l,[{label:'건수',data:tt.v}],'시설유형별 분포');
 
-    renderTable('inspectTable', ['현장명','영업업체','사업구분','실사요청일','실사진행일','거점수'],
-        cur.map(r => [r[colName],r[colCompany],r[colBiz],String(r[colRDate]).slice(0,10),String(r[colPDate]).slice(0,10),r[colSpot]])
-    );
+tbl('stbl',['현장명','업체명','주소','인입경로','시설유형','주차면','등록일'],
+cur.map(r=>[r[nk],r[bk],String(r[ak]).slice(0,30),r[pk],r[tk],r[prk],fmt(r[ck])]));
 }
 
-function refreshDoc(range) {
-    const data = DATA['서류목록'] || [];
-    if (!data.length) { renderCards('docCards',[{label:'데이터 없음',value:'-',sub:'서류목록 파일 업로드 필요'}]); document.getElementById('docCharts').innerHTML=''; document.getElementById('docTable').innerHTML=''; return; }
-    const colRecvDate = findCol(data[0], '업체접수일자', '접수일자');
-    const colContDate = findCol(data[0], '계약/취소일자', '계약일');
-    const colStatus = findCol(data[0], '계약여부');
-    const colCompany = findCol(data[0], '영업업체명', '영업');
-    const colQty = findCol(data[0], '계약수량', '수량');
-    const colBiz2 = findCol(data[0], '사업구분-2');
-    const colPeriod = findCol(data[0], '약정기간');
-    const colElec = findCol(data[0], '전기인입');
-    const colName = findCol(data[0], '현장명');
+function doInspect(R){
+const id=D['실사목록']||[];
+if(!id.length){cards('ic',[{l:'데이터 없음',v:'-',s:'실사목록 업로드 필요'}]);document.getElementById('ich').innerHTML='';document.getElementById('itbl').innerHTML='';return;}
+const pdk=fk(id[0],'실사진행일','진행일');
+const rdk=fk(id[0],'실사요청일','요청일');
+const bk=fk(id[0],'영업업체명','영업');
+const sk=fk(id[0],'거점수','거점');
+const nk=fk(id[0],'현장명');
+const bzk=fk(id[0],'사업구분-2','사업구분');
 
-    const cur = data.filter(r => inRange(parseDate(r[colRecvDate]), range.start, range.end));
-    const prev = data.filter(r => inRange(parseDate(r[colRecvDate]), range.prevStart, range.prevEnd));
-    const contracted = cur.filter(r => String(r[colStatus]).includes('체결'));
-    const totalQty = contracted.reduce((s,r) => s + (parseInt(r[colQty])||0), 0);
-    const prevContracted = prev.filter(r => String(r[colStatus]).includes('체결'));
+log('실사목록 컬럼매핑: 진행일='+pdk+', 영업='+bk+', 거점='+sk);
 
-    renderCards('docCards', [
-        {label:'기간 내 접수', value:cur.length+'건', change: cur.length - prev.length},
-        {label:'계약 체결', value:contracted.length+'건', change: contracted.length - prevContracted.length},
-        {label:'체결률', value: cur.length ? Math.round(contracted.length/cur.length*100)+'%' : '-'},
-        {label:'충전기 수량(체결)', value:totalQty.toLocaleString()+'기'}
-    ]);
+const cur=id.filter(r=>{const d=pDate(r[pdk]);return d&&inR(d,R.s,R.e);});
+const prev=id.filter(r=>{const d=pDate(r[pdk]);return d&&inR(d,R.ps,R.pe);});
+const pending=id.filter(r=>{const v=String(r[pdk]||'').trim();return !v||v==='-'||v==='0';});
+const ts=cur.reduce((s,r)=>s+(parseInt(r[sk])||0),0);
 
-    document.getElementById('docCharts').innerHTML = '';
+cards('ic',[
+{l:'실사 완료',v:cur.length+'건',c:cur.length-prev.length},
+{l:'미진행(대기)',v:pending.length+'건'},
+{l:'총 거점 수',v:ts.toLocaleString()+'개'},
+{l:'건당 평균 거점',v:cur.length?(ts/cur.length).toFixed(1)+'개':'-'}
+]);
 
-    // 업체별
-    const byCompany = topN(countBy(contracted, colCompany), 10);
-    makeChart('docCharts','d-company','bar', byCompany.labels, [{label:'체결 수', data:byCompany.values}], {title:'영업업체별 계약 체결'});
+document.getElementById('ich').innerHTML='';
+const byC=topN(cntBy(cur,bk),10);
+mc('ich','i1','bar',byC.l,[{label:'실사',data:byC.v}],'영업업체별 실사 진행');
+const byB=topN(cntBy(cur,bzk),8);
+mc('ich','i2','doughnut',byB.l,[{data:byB.v}],'사업구분별 실사');
 
-    // 사업구분
-    const byBiz = topN(countBy(contracted, colBiz2), 8);
-    makeChart('docCharts','d-biz','doughnut', byBiz.labels, [{data:byBiz.values}], {title:'사업구분별 계약'});
+const ms={};
+id.forEach(r=>{const d=pDate(r[pdk]);if(d){const k=d.toISOString().slice(0,7);ms[k]=(ms[k]||0)+1;}});
+const mk=Object.keys(ms).sort().slice(-6);
+if(mk.length)mc('ich','i3','line',mk,[{label:'월별 실사',data:mk.map(k=>ms[k]),fill:true,tension:.3}],'최근 6개월 실사 추이');
 
-    // 전기인입
-    const byElec = topN(countBy(contracted, colElec), 6);
-    makeChart('docCharts','d-elec','doughnut', byElec.labels, [{data:byElec.values}], {title:'전기인입 방식별'});
+const sbc={};
+cur.forEach(r=>{const c=r[bk]||'미분류';sbc[c]=(sbc[c]||0)+(parseInt(r[sk])||0);});
+const sc=topN(sbc,10);
+mc('ich','i4','bar',sc.l,[{label:'거점 수',data:sc.v}],'업체별 거점 수 합계');
 
-    // 약정기간 분포
-    const byPeriod = countBy(contracted, colPeriod);
-    const pk = Object.keys(byPeriod).sort((a,b)=>(parseInt(a)||0)-(parseInt(b)||0));
-    makeChart('docCharts','d-period','bar', pk.map(k=>k+'년'), [{label:'건수', data:pk.map(k=>byPeriod[k])}], {title:'약정기간별 분포'});
-
-    // 수량 by company
-    const qtyByCompany = {};
-    contracted.forEach(r => { const c = r[colCompany]||'미분류'; qtyByCompany[c] = (qtyByCompany[c]||0) + (parseInt(r[colQty])||0); });
-    const qc = topN(qtyByCompany, 10);
-    makeChart('docCharts','d-qty','bar', qc.labels, [{label:'충전기 수량', data:qc.values}], {title:'업체별 계약 충전기 수량'});
-
-    // 월별 추이
-    const months = {};
-    data.forEach(r => { const d = parseDate(r[colRecvDate]); if(d){ const k = d.toISOString().slice(0,7); if(!months[k]) months[k]={접수:0,체결:0}; months[k].접수++; if(String(r[colStatus]).includes('체결')) months[k].체결++; }});
-    const mk = Object.keys(months).sort().slice(-6);
-    makeChart('docCharts','d-trend','line', mk, [
-        {label:'접수', data:mk.map(k=>months[k]?.접수||0), tension:.3},
-        {label:'체결', data:mk.map(k=>months[k]?.체결||0), tension:.3}
-    ], {title:'최근 6개월 접수/체결 추이'});
-
-    renderTable('docTable', ['현장명','영업업체','계약여부','사업구분','계약수량','약정기간','전기인입','접수일'],
-        cur.slice(0,200).map(r => [
-            r[colName], r[colCompany],
-            `<span class="badge ${String(r[colStatus]).includes('체결')?'badge-green':'badge-yellow'}">${r[colStatus]}</span>`,
-            r[colBiz2], r[colQty], (r[colPeriod]||'')+'년', r[colElec], String(r[colRecvDate]).slice(0,10)
-        ])
-    );
+tbl('itbl',['현장명','영업업체','사업구분','요청일','진행일','거점수'],
+cur.map(r=>[r[nk],r[bk],r[bzk],fmt(r[rdk]),fmt(r[pdk]),r[sk]]));
 }
 
-refresh();
+function doDoc(R){
+const dd=D['서류목록']||[];
+if(!dd.length){cards('dc',[{l:'데이터 없음',v:'-',s:'서류목록 업로드 필요'}]);document.getElementById('dch').innerHTML='';document.getElementById('dtbl').innerHTML='';return;}
+const rck=fk(dd[0],'업체접수일자','접수일자');
+const cdk=fk(dd[0],'계약/취소일자','계약일자');
+const stk=fk(dd[0],'계약여부');
+const bk=fk(dd[0],'영업업체명','영업');
+const qk=fk(dd[0],'계약수량','수량');
+const bzk=fk(dd[0],'사업구분-2','사업구분');
+const prk=fk(dd[0],'약정기간');
+const ek=fk(dd[0],'전기인입');
+const nk=fk(dd[0],'현장명');
+
+log('서류목록 컬럼매핑: 접수일='+rck+', 계약여부='+stk+', 수량='+qk+', 사업구분='+bzk);
+
+const cur=dd.filter(r=>inR(pDate(r[rck]),R.s,R.e));
+const prev=dd.filter(r=>inR(pDate(r[rck]),R.ps,R.pe));
+const ct=cur.filter(r=>String(r[stk]).includes('체결'));
+const pct=prev.filter(r=>String(r[stk]).includes('체결'));
+const tq=ct.reduce((s,r)=>s+(parseInt(r[qk])||0),0);
+
+cards('dc',[
+{l:'기간 내 접수',v:cur.length+'건',c:cur.length-prev.length},
+{l:'계약 체결',v:ct.length+'건',c:ct.length-pct.length},
+{l:'체결률',v:cur.length?Math.round(ct.length/cur.length*100)+'%':'-'},
+{l:'충전기 수량(체결)',v:tq.toLocaleString()+'기'}
+]);
+
+document.getElementById('dch').innerHTML='';
+
+const byC=topN(cntBy(ct,bk),10);
+mc('dch','d1','bar',byC.l,[{label:'체결 수',data:byC.v}],'영업업체별 계약 체결');
+
+const byB=topN(cntBy(ct,bzk),8);
+mc('dch','d2','doughnut',byB.l,[{data:byB.v}],'사업구분별 계약');
+
+const byE=topN(cntBy(ct,ek),6);
+mc('dch','d3','doughnut',byE.l,[{data:byE.v}],'전기인입 방식별');
+
+const byP=cntBy(ct,prk);
+const pks=Object.keys(byP).filter(k=>k&&k!=='미분류').sort((a,b)=>(parseInt(a)||0)-(parseInt(b)||0));
+if(pks.length)mc('dch','d4','bar',pks.map(k=>k+'년'),[{label:'건수',data:pks.map(k=>byP[k])}],'약정기간별 분포');
+
+const qbc={};
+ct.forEach(r=>{const c=r[bk]||'미분류';qbc[c]=(qbc[c]||0)+(parseInt(r[qk])||0);});
+const qc=topN(qbc,10);
+mc('dch','d5','bar',qc.l,[{label:'충전기 수량',data:qc.v}],'업체별 계약 충전기 수량');
+
+const ms={};
+dd.forEach(r=>{const d=pDate(r[rck]);if(d){const k=d.toISOString().slice(0,7);if(!ms[k])ms[k]={a:0,c:0};ms[k].a++;if(String(r[stk]).includes('체결'))ms[k].c++;}});
+const mk=Object.keys(ms).sort().slice(-6);
+if(mk.length)mc('dch','d6','line',mk,[
+{label:'접수',data:mk.map(k=>ms[k]?.a||0),tension:.3},
+{label:'체결',data:mk.map(k=>ms[k]?.c||0),tension:.3}
+],'최근 6개월 접수/체결 추이');
+
+tbl('dtbl',['현장명','영업업체','계약여부','사업구분','수량','약정','전기인입','접수일'],
+cur.slice(0,300).map(r=>[r[nk],r[bk],
+'<span class="bg '+(String(r[stk]).includes('체결')?'bg-g':'bg-y')+'">'+r[stk]+'</span>',
+r[bzk],r[qk],(r[prk]||''),r[ek],fmt(r[rck])]));
+}
+
+go();
 </script>
 </body>
 </html>
