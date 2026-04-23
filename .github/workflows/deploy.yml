@@ -24,10 +24,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Inject secrets into HTML
+      - name: Inject Supabase secrets
         run: |
-          sed -i "s|__SB_URL__|${{ secrets.SB_URL }}|g" index.html
-          sed -i "s|__SB_KEY__|${{ secrets.SB_KEY }}|g" index.html
+          sed -i "s|__SB_URL__|${{ secrets.SB_URL }}|g"       index.html
+          sed -i "s|__SB_KEY__|${{ secrets.SB_KEY }}|g"       index.html
           sed -i "s|__SB_BUCKET__|${{ secrets.SB_BUCKET }}|g" index.html
 
       - name: Setup Pages
