@@ -59,41 +59,47 @@ body { background: var(--bg); color: var(--text); }
 /* ── 통합 요약 테이블 ── */
 .summary-table-wrap { overflow-x: auto; }
 .summary-tbl {
-    width: 100%; border-collapse: collapse; font-size: 12px; min-width: 1050px;
+    width: 100%; border-collapse: collapse; font-size: 12px; min-width: 1200px;
 }
 .summary-tbl th, .summary-tbl td {
     border: 1px solid #cbd5e1; text-align: center; padding: 7px 10px; white-space: nowrap;
 }
-.summary-tbl thead tr:first-child th { color: #fff; font-size: 12px; font-weight: 700; padding: 9px 10px; }
+/* 1행 대분류 */
+.summary-tbl thead tr:first-child th {
+    color: #fff; font-size: 12px; font-weight: 700; padding: 9px 10px;
+}
 .th-name  { background: #1e293b !important; }
 .th-site  { background: #1d4ed8 !important; }
 .th-ins   { background: #065f46 !important; }
 .th-dcnt  { background: #92400e !important; }
 .th-dqty  { background: #4c1d95 !important; }
 .th-route { background: #0f4c81 !important; }
-.summary-tbl thead tr:nth-child(2) th { font-size: 11px; font-weight: 700; padding: 6px 8px; }
+
+/* 2행 소분류 */
+.summary-tbl thead tr:nth-child(2) th {
+    font-size: 11px; font-weight: 700; padding: 6px 8px;
+}
 .th2-site  { background: #bfdbfe !important; color: #1e3a8a !important; }
 .th2-ins   { background: #a7f3d0 !important; color: #065f46 !important; }
 .th2-dcnt  { background: #fde68a !important; color: #92400e !important; }
 .th2-dqty  { background: #ddd6fe !important; color: #4c1d95 !important; }
-.th2-route { background: #e0f2fe !important; color: #0f4c81 !important; }
-/* 인입경로 개별 컬러 */
-.th2-r1 { background: #dcfce7 !important; color: #166534 !important; }
-.th2-r2 { background: #fef9c3 !important; color: #854d0e !important; }
-.th2-r3 { background: #fce7f3 !important; color: #9d174d !important; }
-.th2-r4 { background: #fee2e2 !important; color: #991b1b !important; }
-.th2-r5 { background: #ede9fe !important; color: #5b21b6 !important; }
+.th2-r1    { background: #dcfce7 !important; color: #166534 !important; }
+.th2-r2    { background: #fef9c3 !important; color: #854d0e !important; }
+.th2-r3    { background: #fce7f3 !important; color: #9d174d !important; }
+.th2-r4    { background: #fee2e2 !important; color: #991b1b !important; }
+.th2-r5    { background: #ede9fe !important; color: #5b21b6 !important; }
 
-.summary-tbl tbody td:first-child { text-align: left; font-weight: 700; background: #f8fafc; min-width: 130px; }
-.summary-tbl tbody tr.total-row td { background: #eff6ff !important; font-weight: 800; color: #1e40af; }
+/* 바디 */
+.summary-tbl tbody td:first-child {
+    text-align: left; font-weight: 700; background: #f8fafc; min-width: 130px;
+}
+.summary-tbl tbody tr.total-row td {
+    background: #eff6ff !important; font-weight: 800; color: #1e40af;
+}
 .summary-tbl tbody tr:hover td { background: #f1f5f9; }
 .summary-tbl tbody tr.total-row:hover td { background: #dbeafe !important; }
 .zero { color: #d1d5db !important; font-size: 11px; }
-.hl { color: #2563eb; font-weight: 700; }
-
-/* 계약현황 탭 - 인입경로 차트 */
-.route-legend { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; justify-content: center; }
-.route-badge { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+.hl   { color: #2563eb; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -152,7 +158,7 @@ body { background: var(--bg); color: var(--text); }
             <table class="summary-tbl" id="summaryTable">
                 <thead id="summaryHead"></thead>
                 <tbody id="summaryTbody">
-                    <tr><td colspan="15" style="text-align:center;color:#94a3b8;padding:24px;">
+                    <tr><td colspan="16" style="text-align:center;color:#94a3b8;padding:24px;">
                         데이터를 업로드하면 자동으로 집계됩니다.
                     </td></tr>
                 </tbody>
@@ -160,7 +166,10 @@ body { background: var(--bg); color: var(--text); }
         </div>
     </div>
 
-    <div class="cd"><h3>성과 통합 비중</h3><div class="chart-h"><canvas id="pieAll"></canvas></div></div>
+    <div class="cd">
+        <h3>성과 통합 비중</h3>
+        <div class="chart-h"><canvas id="pieAll"></canvas></div>
+    </div>
 </div>
 
 <!-- ══════════════ 현장현황 ══════════════ -->
@@ -233,7 +242,6 @@ body { background: var(--bg); color: var(--text); }
             </div>
         </div>
     </div>
-    <!-- 계약현황 탭 인입경로 분포 -->
     <div class="g-stat">
         <div class="cd">
             <h3>계약 인입경로 분포 (현재기간)</h3>
@@ -254,17 +262,13 @@ body { background: var(--bg); color: var(--text); }
    전역
 ============================================================ */
 let STORE = { site: [], ins: [], doc: [] };
-let mode = 'week';
+let mode  = 'week';
 let charts = {};
 const $ = id => document.getElementById(id);
 
 $('baseDate').value = new Date().toISOString().slice(0,10);
 
-/**
- * 인입경로 키 정의
- * 순서: 신규계약 / 추가계약 / 자사교체 / 타사교체 / 투자설치
- */
-const ROUTE_KEYS  = ['신규계약', '추가계약', '자사교체', '타사교체', '투자설치'];
+const ROUTE_KEYS = ['신규계약','추가계약','자사교체','타사교체','투자설치'];
 const ROUTE_COLORS = {
     '신규계약': { bg:'#dcfce7', color:'#166534', bar:'#22c55e' },
     '추가계약': { bg:'#fef9c3', color:'#854d0e', bar:'#eab308' },
@@ -274,29 +278,26 @@ const ROUTE_COLORS = {
 };
 
 const MODE_LABEL = {
-    week:    { cur:'금주',   accum:'연간누적', prev:'전주' },
-    month:   { cur:'금월',   accum:'연간누적', prev:'전월' },
+    week:    { cur:'금주',   accum:'연간누적', prev:'전주'   },
+    month:   { cur:'금월',   accum:'연간누적', prev:'전월'   },
     quarter: { cur:'금분기', accum:'연간누적', prev:'전분기' },
-    year:    { cur:'금년',   accum:'전년',     prev:'전년' },
+    year:    { cur:'금년',   accum:'전년',     prev:'전년'   },
 };
 
 /* ============================================================
-   인입경로 분류 함수
-   - N열(13): 사업구분-2  → '투자설치' 포함 시 → '투자설치'
-   - L열(11): 계약구분    → 신규계약 / 추가계약 / 자사교체 / 타사교체
+   인입경로 분류
+   N열(13): 사업구분-2 → '투자설치' 포함 시 → 투자설치
+   L열(11): 계약구분   → 신규계약 / 추가계약 / 자사교체 / 타사교체
 ============================================================ */
 function classifyRoute(row) {
-    const bizType2  = String(row[13] || '').trim(); // N열: 사업구분-2
-    const contractType = String(row[11] || '').trim(); // L열: 계약구분
-
-    if (bizType2.includes('투자설치')) return '투자설치';
-
-    if (contractType.includes('신규')) return '신규계약';
-    if (contractType.includes('추가')) return '추가계약';
-    if (contractType.includes('자사')) return '자사교체';
-    if (contractType.includes('타사')) return '타사교체';
-
-    return '기타'; // 분류 불가 시
+    const bizType2     = String(row[13] || '').trim();
+    const contractType = String(row[11] || '').trim();
+    if (bizType2.includes('투자설치'))  return '투자설치';
+    if (contractType.includes('신규'))  return '신규계약';
+    if (contractType.includes('추가'))  return '추가계약';
+    if (contractType.includes('자사'))  return '자사교체';
+    if (contractType.includes('타사'))  return '타사교체';
+    return '기타';
 }
 
 /* ============================================================
@@ -339,16 +340,16 @@ function getRanges() {
         curE = new Date(tFri);
         preS = new Date(curS); preS.setDate(curS.getDate() - 7);
         preE = new Date(curE); preE.setDate(curE.getDate() - 7);
-        accumS = new Date(curE.getFullYear(), 0, 1);
-        accumE = new Date(curE);
+        accumS    = new Date(curE.getFullYear(), 0, 1);
+        accumE    = new Date(curE);
         yearLabel = String(curE.getFullYear());
     } else if (mode === 'month') {
         curS = new Date(base.getFullYear(), base.getMonth(), 1);
         curE = new Date(base.getFullYear(), base.getMonth() + 1, 0);
         preS = new Date(base.getFullYear(), base.getMonth() - 1, 1);
         preE = new Date(base.getFullYear(), base.getMonth(), 0);
-        accumS = new Date(base.getFullYear(), 0, 1);
-        accumE = new Date(curE);
+        accumS    = new Date(base.getFullYear(), 0, 1);
+        accumE    = new Date(curE);
         yearLabel = String(base.getFullYear());
     } else if (mode === 'quarter') {
         const q = Math.floor(base.getMonth() / 3);
@@ -356,16 +357,16 @@ function getRanges() {
         curE = new Date(base.getFullYear(), (q + 1) * 3, 0);
         preS = new Date(base.getFullYear(), (q - 1) * 3, 1);
         preE = new Date(base.getFullYear(), q * 3, 0);
-        accumS = new Date(base.getFullYear(), 0, 1);
-        accumE = new Date(curE);
+        accumS    = new Date(base.getFullYear(), 0, 1);
+        accumE    = new Date(curE);
         yearLabel = String(base.getFullYear());
     } else {
         curS = new Date(base.getFullYear(), 0, 1);
         curE = new Date(base.getFullYear(), 11, 31);
         preS = new Date(base.getFullYear() - 1, 0, 1);
         preE = new Date(base.getFullYear() - 1, 11, 31);
-        accumS = new Date(base.getFullYear() - 1, 0, 1);
-        accumE = new Date(base.getFullYear() - 1, 11, 31);
+        accumS    = new Date(base.getFullYear() - 1, 0, 1);
+        accumE    = new Date(base.getFullYear() - 1, 11, 31);
         yearLabel = String(base.getFullYear() - 1);
     }
 
@@ -374,7 +375,6 @@ function getRanges() {
 
     const f = d => d.toISOString().slice(0,10);
     $('dateRange').textContent = `${f(curS)} ~ ${f(curE)}`;
-
     return { cur:{s:curS,e:curE}, pre:{s:preS,e:preE}, accum:{s:accumS,e:accumE}, yearLabel };
 }
 
@@ -422,43 +422,46 @@ function renderAll() {
     $('kpi-doc-label').textContent  = `계약체결 (${lbl.cur})`;
     $('kpi-qty-label').textContent  = `계약수량 (${lbl.cur})`;
 
-    /* ── 현장 집계 ── B(1):업체 / I(8):등록일 */
-    let curSite={}, preSite={};
+    /* ────────────────────────────────────────
+       현장 집계
+       B(1):업체 / I(8):등록일
+    ──────────────────────────────────────── */
+    let curSite={}, preSite={}, accumSite={};
 
     STORE.site.slice(3).forEach(row => {
         const d = parseD(row[8]);
         const v = String(row[1]||'미지정').trim();
         if (!d) return;
-        if (d >= W.cur.s && d <= W.cur.e)      curSite[v] = (curSite[v]||0) + 1;
-        else if (d >= W.pre.s && d <= W.pre.e) preSite[v] = (preSite[v]||0) + 1;
+        if (d >= W.accum.s && d <= W.accum.e) accumSite[v] = (accumSite[v]||0) + 1;
+        if      (d >= W.cur.s  && d <= W.cur.e)  curSite[v]   = (curSite[v]||0)   + 1;
+        else if (d >= W.pre.s  && d <= W.pre.e)  preSite[v]   = (preSite[v]||0)   + 1;
     });
 
-    /* ── 실사 집계 ── B(1):업체 / I(8):실사일 */
-    let curIns={}, preIns={};
+    /* ────────────────────────────────────────
+       실사 집계
+       B(1):업체 / I(8):실사일
+    ──────────────────────────────────────── */
+    let curIns={}, preIns={}, accumIns={};
 
     STORE.ins.slice(3).forEach(row => {
         const d = parseD(row[8]);
         const v = String(row[1]||'미지정').trim();
         if (!d) return;
-        if (d >= W.cur.s && d <= W.cur.e)      curIns[v] = (curIns[v]||0) + 1;
-        else if (d >= W.pre.s && d <= W.pre.e) preIns[v] = (preIns[v]||0) + 1;
+        if (d >= W.accum.s && d <= W.accum.e) accumIns[v] = (accumIns[v]||0) + 1;
+        if      (d >= W.cur.s && d <= W.cur.e)  curIns[v]   = (curIns[v]||0)   + 1;
+        else if (d >= W.pre.s && d <= W.pre.e)  preIns[v]   = (preIns[v]||0)   + 1;
     });
 
-    /* ── 계약 집계 ──
+    /* ────────────────────────────────────────
+       계약 집계
        I(8):업체 / J(9):계약여부 / K(10):계약일
        L(11):계약구분 / N(13):사업구분-2 / O(14):계약수량(kW)
-    ── */
-    let curDoc={},  preDoc={},  accumDoc={};
+    ──────────────────────────────────────── */
+    let curDoc={}, preDoc={}, accumDoc={};
     let curDocQty={}, accumDocQty={};
     let totalQty = 0;
-
-    // 인입경로별 집계: cur / accum
-    // { vendor: { '신규계약':0, '추가계약':0, ... } }
-    let vendorRouteCur   = {};
-    let vendorRouteAccum = {};
-    // 전체 인입경로 cur 합산 (계약현황 탭 차트용)
-    let routeSumCur   = {};
-    let routeSumAccum = {};
+    let vendorRouteAccum = {}; // { vendor: { '신규계약':0, ... } }
+    let routeSumCur      = {}; // 현재기간 전체 합산 (계약현황 탭 차트용)
 
     STORE.doc.slice(3).forEach(row => {
         if (!String(row[9]||'').includes('체결')) return;
@@ -466,24 +469,21 @@ function renderAll() {
         if (!d) return;
         const v     = String(row[8]||'미지정').trim();
         const qty   = parseFloat(row[14]) || 0;
-        const route = classifyRoute(row); // ← 핵심 분류 함수
+        const route = classifyRoute(row);
 
-        /* 누적 집계 */
+        /* 누적 */
         if (d >= W.accum.s && d <= W.accum.e) {
             accumDoc[v]    = (accumDoc[v]||0)    + 1;
             accumDocQty[v] = (accumDocQty[v]||0) + qty;
             if (!vendorRouteAccum[v]) vendorRouteAccum[v] = {};
             vendorRouteAccum[v][route] = (vendorRouteAccum[v][route]||0) + 1;
-            routeSumAccum[route] = (routeSumAccum[route]||0) + 1;
         }
 
-        /* 현재 기간 집계 */
+        /* 현재기간 */
         if (d >= W.cur.s && d <= W.cur.e) {
             curDoc[v]    = (curDoc[v]||0)    + 1;
             curDocQty[v] = (curDocQty[v]||0) + qty;
             totalQty    += qty;
-            if (!vendorRouteCur[v]) vendorRouteCur[v] = {};
-            vendorRouteCur[v][route] = (vendorRouteCur[v][route]||0) + 1;
             routeSumCur[route] = (routeSumCur[route]||0) + 1;
         } else if (d >= W.pre.s && d <= W.pre.e) {
             preDoc[v] = (preDoc[v]||0) + 1;
@@ -491,7 +491,7 @@ function renderAll() {
     });
 
     /* KPI 카드 */
-    const sum = o => Object.values(o).reduce((a,b)=>a+b,0);
+    const sum = o => Object.values(o).reduce((a,b)=>a+b, 0);
     $('s-site').textContent = sum(curSite);
     $('s-ins').textContent  = sum(curIns);
     $('s-doc').textContent  = sum(curDoc);
@@ -500,12 +500,14 @@ function renderAll() {
     /* 통합 요약 테이블 */
     renderSummaryTable({
         lbl, W,
-        curSite,   curIns,  curDoc,  curDocQty,
-        accumDoc,  accumDocQty,
-        vendorRouteCur, vendorRouteAccum
+        curSite,  accumSite,
+        curIns,   accumIns,
+        curDoc,   accumDoc,
+        curDocQty, accumDocQty,
+        vendorRouteAccum
     });
 
-    /* 탭별 */
+    /* 탭별 테이블/차트 */
     renderCompTable('siteTable', curSite, preSite, lbl);
     renderCompTable('insTable',  curIns,  preIns,  lbl);
     renderDocTable('docTable',   curDoc,  preDoc,  curDocQty, lbl);
@@ -514,7 +516,14 @@ function renderAll() {
     drawCompChart('barSiteComp', curSite, preSite, lbl);
     drawCompChart('barInsComp',  curIns,  preIns,  lbl);
     drawCompChart('barDocComp',  curDoc,  preDoc,  lbl);
+
+    const routeLabels = ROUTE_KEYS.filter(k => routeSumCur[k] > 0);
     drawPieChart('pieRoute',
+        routeLabels,
+        routeLabels.map(k => routeSumCur[k]),
+        routeLabels.map(k => ROUTE_COLORS[k]?.bar || '#94a3b8')
+    );
+    drawPieChart('piePath',
         ROUTE_KEYS.filter(k => routeSumCur[k] > 0),
         ROUTE_KEYS.filter(k => routeSumCur[k] > 0).map(k => routeSumCur[k]),
         ROUTE_KEYS.filter(k => routeSumCur[k] > 0).map(k => ROUTE_COLORS[k]?.bar || '#94a3b8')
@@ -528,29 +537,40 @@ function renderAll() {
 
 /* ============================================================
    통합 요약 테이블 렌더링
+   컬럼 구성:
+   영업업체명 |
+   현장등록: 금주 / 연누적 |
+   현장실사: 금주 / 연누적 |
+   계약완료(건): 금주 / 연누적 |
+   계약완료(기): 금주 / 연누적 |
+   인입경로(누적): 신규계약 / 추가계약 / 자사교체 / 타사교체 / 투자설치
 ============================================================ */
 function renderSummaryTable({ lbl, W,
-    curSite, curIns, curDoc, curDocQty,
-    accumDoc, accumDocQty,
-    vendorRouteCur, vendorRouteAccum }) {
+    curSite,  accumSite,
+    curIns,   accumIns,
+    curDoc,   accumDoc,
+    curDocQty, accumDocQty,
+    vendorRouteAccum }) {
 
     const accumLabel = mode === 'year'
         ? `전년(${W.yearLabel})`
         : `${W.yearLabel}년 누적`;
 
-    /* ── 동적 헤더 ── */
+    /* 동적 헤더 */
     $('summaryHead').innerHTML = `
     <tr>
-      <th class="th-name" rowspan="2" style="min-width:130px;">영업업체명</th>
-      <th class="th-site"  colspan="1">현장등록</th>
-      <th class="th-ins"   colspan="1">현장실사</th>
+      <th class="th-name"  rowspan="2" style="min-width:130px;">영업업체명</th>
+      <th class="th-site"  colspan="2">현장등록</th>
+      <th class="th-ins"   colspan="2">현장실사</th>
       <th class="th-dcnt"  colspan="2">계약완료(건)</th>
       <th class="th-dqty"  colspan="2">계약완료(기)</th>
       <th class="th-route" colspan="5">계약 인입경로 (${accumLabel})</th>
     </tr>
     <tr>
       <th class="th2-site">${lbl.cur}</th>
+      <th class="th2-site">${accumLabel}</th>
       <th class="th2-ins">${lbl.cur}</th>
+      <th class="th2-ins">${accumLabel}</th>
       <th class="th2-dcnt">${lbl.cur}</th>
       <th class="th2-dcnt">${accumLabel}</th>
       <th class="th2-dqty">${lbl.cur}</th>
@@ -565,21 +585,21 @@ function renderSummaryTable({ lbl, W,
     const tbody = $('summaryTbody');
     tbody.innerHTML = '';
 
-    /* 전체 업체 수집 */
+    /* 전체 업체 수집 → 누적 현장등록 기준 정렬 */
     const allVendors = Array.from(new Set([
+        ...Object.keys(accumSite),
+        ...Object.keys(accumIns),
+        ...Object.keys(accumDoc),
+        ...Object.keys(curDoc),
         ...Object.keys(curSite),
         ...Object.keys(curIns),
-        ...Object.keys(accumDoc),
-        ...Object.keys(curDoc)
-    ])).sort((a,b) => (accumDoc[b]||0) - (accumDoc[a]||0));
+    ])).sort((a,b) => (accumSite[b]||0) - (accumSite[a]||0));
 
     /* 합계 계산 */
-    const sum = o => Object.values(o).reduce((a,b)=>a+b,0);
-    const routeTotalCur   = {};
+    const sum = o => Object.values(o).reduce((a,b)=>a+b, 0);
     const routeTotalAccum = {};
     ROUTE_KEYS.forEach(k => {
-        routeTotalCur[k]   = Object.values(vendorRouteCur).reduce((s,r)=>s+(r[k]||0), 0);
-        routeTotalAccum[k] = Object.values(vendorRouteAccum).reduce((s,r)=>s+(r[k]||0), 0);
+        routeTotalAccum[k] = Object.values(vendorRouteAccum).reduce((s,r) => s+(r[k]||0), 0);
     });
 
     /* 합계 행 */
@@ -587,9 +607,10 @@ function renderSummaryTable({ lbl, W,
     totalTr.className = 'total-row';
     totalTr.innerHTML = buildRow(
         '합계',
-        sum(curSite), sum(curIns),
-        sum(curDoc),  sum(accumDoc),
-        sum(curDocQty), sum(accumDocQty),
+        sum(curSite),    sum(accumSite),
+        sum(curIns),     sum(accumIns),
+        sum(curDoc),     sum(accumDoc),
+        sum(curDocQty),  sum(accumDocQty),
         routeTotalAccum, true
     );
     tbody.appendChild(totalTr);
@@ -599,26 +620,36 @@ function renderSummaryTable({ lbl, W,
         const tr = document.createElement('tr');
         tr.innerHTML = buildRow(
             v,
-            curSite[v]||0,   curIns[v]||0,
-            curDoc[v]||0,    accumDoc[v]||0,
-            curDocQty[v]||0, accumDocQty[v]||0,
+            curSite[v]||0,    accumSite[v]||0,
+            curIns[v]||0,     accumIns[v]||0,
+            curDoc[v]||0,     accumDoc[v]||0,
+            curDocQty[v]||0,  accumDocQty[v]||0,
             vendorRouteAccum[v]||{}, false
         );
         tbody.appendChild(tr);
     });
 }
 
-function buildRow(name, cS, cI, cD, aD, cDQ, aDQ, routeAccum, isTotal) {
+/* buildRow: 16개 컬럼 (업체명 + 금주/누적×4항목 + 인입경로5) */
+function buildRow(name,
+    cS, aS,   // 현장등록: 금주 / 누적
+    cI, aI,   // 현장실사: 금주 / 누적
+    cD, aD,   // 계약완료(건): 금주 / 누적
+    cDQ, aDQ, // 계약완료(기): 금주 / 누적
+    routeAccum, isTotal) {
+
     const cell = (v, isQty=false) => {
-        if (v === 0 || v === null || v === undefined) return `<td class="zero">-</td>`;
+        if (!v || v === 0) return `<td class="zero">-</td>`;
         const txt = isQty ? Number(v).toLocaleString() : Number(v).toLocaleString();
         return `<td class="${isTotal ? 'hl' : ''}">${txt}</td>`;
     };
     const routeCells = ROUTE_KEYS.map(k => cell(routeAccum[k]||0)).join('');
+
     return `
       <td>${name}</td>
-      ${cell(cS)} ${cell(cI)}
-      ${cell(cD)} ${cell(aD)}
+      ${cell(cS)}  ${cell(aS)}
+      ${cell(cI)}  ${cell(aI)}
+      ${cell(cD)}  ${cell(aD)}
       ${cell(cDQ, true)} ${cell(aDQ, true)}
       ${routeCells}`;
 }
@@ -630,24 +661,24 @@ function renderRouteTable(routeSum) {
     const tbody = $('routeTable').querySelector('tbody');
     tbody.innerHTML = '';
     const total = Object.values(routeSum).reduce((a,b)=>a+b, 0);
-    // ROUTE_KEYS 순서대로 표시
     ROUTE_KEYS.forEach(k => {
         const c = routeSum[k] || 0;
         if (c === 0) return;
         const pct = total ? ((c/total)*100).toFixed(1) : 0;
-        const col = ROUTE_COLORS[k] || { bg:'#f8fafc', color:'#1e293b' };
+        const col = ROUTE_COLORS[k];
         tbody.innerHTML += `<tr>
-          <td><span style="background:${col.bg};color:${col.color};padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">${k}</span></td>
+          <td><span style="background:${col.bg};color:${col.color};
+              padding:3px 9px;border-radius:10px;font-size:11px;font-weight:700;">${k}</span></td>
           <td style="font-weight:700;">${c}건</td>
           <td>${pct}%</td>
         </tr>`;
     });
-    // 기타가 있으면 추가
     if (routeSum['기타']) {
         const c = routeSum['기타'];
         const pct = total ? ((c/total)*100).toFixed(1) : 0;
         tbody.innerHTML += `<tr>
-          <td><span style="background:#f1f5f9;color:#64748b;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">기타</span></td>
+          <td><span style="background:#f1f5f9;color:#64748b;
+              padding:3px 9px;border-radius:10px;font-size:11px;font-weight:700;">기타</span></td>
           <td style="font-weight:700;">${c}건</td>
           <td>${pct}%</td>
         </tr>`;
@@ -694,24 +725,24 @@ function drawCompChart(id, cur, pre, lbl) {
     if (charts[id]) charts[id].destroy();
     const labels = Array.from(new Set([...Object.keys(cur),...Object.keys(pre)])).slice(0,10);
     charts[id] = new Chart($(id), {
-        type:'bar',
-        data:{
+        type: 'bar',
+        data: {
             labels,
-            datasets:[
-                { label:lbl.prev, data:labels.map(l=>pre[l]||0), backgroundColor:'#cbd5e1' },
-                { label:lbl.cur,  data:labels.map(l=>cur[l]||0), backgroundColor:'#2563eb' }
+            datasets: [
+                { label: lbl.prev, data: labels.map(l=>pre[l]||0), backgroundColor:'#cbd5e1' },
+                { label: lbl.cur,  data: labels.map(l=>cur[l]||0), backgroundColor:'#2563eb' }
             ]
         },
-        options:{ maintainAspectRatio:false, scales:{ y:{ beginAtZero:true, ticks:{stepSize:1} } } }
+        options: { maintainAspectRatio:false, scales:{ y:{ beginAtZero:true, ticks:{stepSize:1} } } }
     });
 }
 function drawPieChart(id, labels, data, colors) {
     if (charts[id]) charts[id].destroy();
     if (!labels.length) return;
     charts[id] = new Chart($(id), {
-        type:'doughnut',
-        data:{ labels, datasets:[{ data, backgroundColor: colors || ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444'] }] },
-        options:{ maintainAspectRatio:false, plugins:{ legend:{ position:'bottom' } } }
+        type: 'doughnut',
+        data: { labels, datasets:[{ data, backgroundColor: colors||['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444'] }] },
+        options: { maintainAspectRatio:false, plugins:{ legend:{ position:'bottom' } } }
     });
 }
 
