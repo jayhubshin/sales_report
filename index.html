@@ -86,35 +86,40 @@ body { background: var(--bg); color: var(--text); }
     border: none; border-radius: 8px;
     font-size: 12px; font-weight: 700;
     cursor: pointer; transition: background .2s;
+    white-space: nowrap;
 }
 .capture-btn:hover { background: #334155; }
-.capture-btn svg { width:14px; height:14px; }
+.capture-btn:disabled { background: #94a3b8; cursor: not-allowed; }
 
-/* 테이블 스크롤 래퍼 */
-.summary-table-wrap { overflow-x: auto; padding: 0; }
+/* 테이블을 가로 중앙 정렬하기 위한 래퍼 */
+.summary-table-wrap {
+    overflow-x: auto;
+    padding: 20px;
+    display: flex;
+    justify-content: center;   /* ← 가로 중앙 정렬 */
+}
 
 /* ══════════════════════════════════════
-   요약 테이블 본체 — PPT 캡처 최적화
-   글자를 셀에 꽉 차게, 폭 제한 없음
+   요약 테이블 본체
 ══════════════════════════════════════ */
 .summary-tbl {
     border-collapse: collapse;
-    font-size: 15px;       /* 기본 글자 크기 ↑ */
+    font-size: 15px;
     white-space: nowrap;
-    width: max-content;    /* 폭 제한 없이 내용에 맞게 확장 */
+    width: max-content;
 }
 .summary-tbl th, .summary-tbl td {
-    border: 1px solid #94a3b8;
+    border: 1px solid #64748b;
     text-align: center;
-    padding: 9px 14px;     /* 상하/좌우 패딩으로 셀을 꽉 채움 */
+    padding: 9px 16px;
     line-height: 1.2;
 }
 
 /* 1행 대분류 헤더 */
 .summary-tbl thead tr:first-child th {
-    color: #fff; font-size: 14px; font-weight: 800; padding: 10px 14px;
+    color: #fff; font-size: 14px; font-weight: 800; padding: 10px 16px;
 }
-.th-name  { background: #0f172a !important; min-width: 140px; }
+.th-name  { background: #0f172a !important; min-width: 150px; }
 .th-site  { background: #1d4ed8 !important; }
 .th-ins   { background: #065f46 !important; }
 .th-dcnt  { background: #92400e !important; }
@@ -123,7 +128,7 @@ body { background: var(--bg); color: var(--text); }
 
 /* 2행 소분류 헤더 */
 .summary-tbl thead tr:nth-child(2) th {
-    font-size: 13px; font-weight: 800; padding: 8px 14px;
+    font-size: 13px; font-weight: 800; padding: 8px 16px;
 }
 .th2-site  { background: #bfdbfe !important; color: #1e3a8a !important; }
 .th2-ins   { background: #a7f3d0 !important; color: #065f46 !important; }
@@ -140,11 +145,12 @@ body { background: var(--bg); color: var(--text); }
     font-size: 15px; font-weight: 600; color: #1e293b;
 }
 .summary-tbl tbody td:first-child {
-    text-align: left; font-weight: 800; background: #f1f5f9;
-    font-size: 14px;
+    text-align: left; font-weight: 800;
+    background: #f1f5f9; font-size: 14px;
 }
 .summary-tbl tbody tr.total-row td {
-    background: #eff6ff !important; font-weight: 900; color: #1e3a8a; font-size: 15px;
+    background: #eff6ff !important; font-weight: 900;
+    color: #1e3a8a; font-size: 15px;
 }
 .summary-tbl tbody tr:not(.total-row):hover td { background: #f8fafc; }
 .summary-tbl tbody tr.total-row:hover td { background: #dbeafe !important; }
@@ -198,25 +204,20 @@ body { background: var(--bg); color: var(--text); }
         </div>
         <div class="kpi-card purple">
             <h3 id="kpi-qty-label">계약수량 (금주)</h3>
-            <div class="val" id="s-qty">0</div><div class="sub">kW</div>
+            <div class="val" id="s-qty">0</div><div class="sub">기</div>
         </div>
     </div>
 
-    <!-- 통합 요약 테이블 카드 -->
+    <!-- 통합 요약 테이블 -->
     <div class="summary-card">
         <div class="summary-card-header">
             <h3 id="summaryTitle">업체별 통합 실적 요약표</h3>
-            <button class="capture-btn" onclick="captureTable()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/>
-                    <line x1="16" y1="3" x2="16" y2="6"/><line x1="8" y1="3" x2="8" y2="6"/>
-                    <line x1="3" y1="8" x2="6" y2="8"/><line x1="3" y1="16" x2="6" y2="16"/>
-                </svg>
+            <button class="capture-btn" id="captureBtn" onclick="captureTable()">
                 📷 요약표 캡처
             </button>
         </div>
+        <!-- 캡처 대상 — 테이블만 포함, 배경 흰색 -->
         <div class="summary-table-wrap">
-            <!-- 캡처 대상 영역 -->
             <div id="captureTarget" style="display:inline-block; padding:16px; background:#fff;">
                 <table class="summary-tbl" id="summaryTable">
                     <thead id="summaryHead"></thead>
@@ -261,7 +262,7 @@ body { background: var(--bg); color: var(--text); }
         <div class="cd">
             <h3>인입경로 요약</h3>
             <table class="tbl" id="pathTable">
-                <thead><tr><th>인입경로</th><th>건수</th><th>비중</th></tr></thead>
+                <thead><tr><th>인입경로</th><th>계약수량</th><th>비중</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
@@ -299,7 +300,7 @@ body { background: var(--bg); color: var(--text); }
             <div class="tbl-wrap">
                 <table class="tbl" id="docTable">
                     <thead><tr>
-                        <th>영업업체명</th><th>이전 실적</th><th>현재 실적</th><th>증감</th><th>계약수량</th>
+                        <th>영업업체명</th><th>이전 실적</th><th>현재 실적</th><th>증감</th><th>계약수량(기)</th>
                     </tr></thead>
                     <tbody></tbody>
                 </table>
@@ -314,7 +315,7 @@ body { background: var(--bg); color: var(--text); }
         <div class="cd">
             <h3>계약 인입경로 요약</h3>
             <table class="tbl" id="routeTable">
-                <thead><tr><th>인입경로</th><th>계약수량(kW)</th><th>비중</th></tr></thead>
+                <thead><tr><th>인입경로</th><th>계약수량(기)</th><th>비중</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
@@ -332,10 +333,10 @@ const $ = id => document.getElementById(id);
 
 $('baseDate').value = new Date().toISOString().slice(0,10);
 
-/* 인입경로 정의 — 표시명(간략) / 분류키 */
-const ROUTE_KEYS    = ['신규계약','추가계약','자사교체','타사교체','투자설치'];
-const ROUTE_LABELS  = { '신규계약':'신규', '추가계약':'추가', '자사교체':'자사', '타사교체':'타사', '투자설치':'투자' };
-const ROUTE_COLORS  = {
+/* 인입경로 정의 */
+const ROUTE_KEYS   = ['신규계약','추가계약','자사교체','타사교체','투자설치'];
+const ROUTE_LABELS = { '신규계약':'신규', '추가계약':'추가', '자사교체':'자사', '타사교체':'타사', '투자설치':'투자' };
+const ROUTE_COLORS = {
     '신규계약': { bg:'#dcfce7', color:'#14532d', bar:'#22c55e' },
     '추가계약': { bg:'#fef9c3', color:'#713f12', bar:'#eab308' },
     '자사교체': { bg:'#fce7f3', color:'#831843', bar:'#ec4899' },
@@ -352,8 +353,8 @@ const MODE_LABEL = {
 
 /* ============================================================
    인입경로 분류
-   N열(13): 사업구분-2 → '투자설치' 포함 → 투자설치
-   L열(11): 계약구분   → 신규/추가/자사/타사
+   N열(13): 사업구분-2 → '투자설치' 포함 시 → 투자설치
+   L열(11): 계약구분   → 신규 / 추가 / 자사 / 타사
 ============================================================ */
 function classifyRoute(row) {
     const bizType2     = String(row[13] || '').trim();
@@ -487,7 +488,7 @@ function renderAll() {
     $('kpi-doc-label').textContent  = `계약체결 (${lbl.cur})`;
     $('kpi-qty-label').textContent  = `계약수량 (${lbl.cur})`;
 
-    /* ── 현장 집계 B(1)/I(8) ── */
+    /* ── 현장 집계 B(1) / I(8) ── */
     let curSite={}, preSite={}, accumSite={};
     STORE.site.slice(3).forEach(row => {
         const d = parseD(row[8]);
@@ -498,7 +499,7 @@ function renderAll() {
         else if (d >= W.pre.s && d <= W.pre.e)  preSite[v]  = (preSite[v]||0)  + 1;
     });
 
-    /* ── 실사 집계 B(1)/I(8) ── */
+    /* ── 실사 집계 B(1) / I(8) ── */
     let curIns={}, preIns={}, accumIns={};
     STORE.ins.slice(3).forEach(row => {
         const d = parseD(row[8]);
@@ -509,60 +510,69 @@ function renderAll() {
         else if (d >= W.pre.s && d <= W.pre.e)  preIns[v]  = (preIns[v]||0)  + 1;
     });
 
-    /* ── 계약 집계 I(8)/J(9)/K(10)/L(11)/N(13)/O(14) ── */
+    /* ── 계약 집계
+         I(8) : 영업업체명
+         J(9) : 계약여부 ('체결' 포함만)
+         K(10): 계약/취소일자
+         L(11): 계약구분  (신규/추가/자사/타사)
+         N(13): 사업구분-2 (투자설치 여부)
+         O(14): 계약수량  (충전기 대수, 기)   ← kW 아님
+    ── */
     let curDoc={}, preDoc={}, accumDoc={};
     let curDocQty={}, accumDocQty={};
     let totalQty = 0;
-    // 인입경로별 계약수량(kW) 누적
-    let vendorRouteAccumQty = {}; // { vendor: { '신규계약': kW합, ... } }
-    let routeSumCurQty      = {}; // 현재기간 인입경로별 kW 합산
+
+    // 인입경로별 계약수량(기) 집계
+    let vendorRouteAccumQty = {}; // { vendor: { route: 기수 } }
+    let routeSumCurQty      = {}; // 현재기간 인입경로별 기수 합산
 
     STORE.doc.slice(3).forEach(row => {
         if (!String(row[9]||'').includes('체결')) return;
         const d = parseD(row[10]);
         if (!d) return;
         const v     = String(row[8]||'미지정').trim();
-        const qty   = parseFloat(row[14]) || 0;
+        const qty   = parseFloat(row[14]) || 0;   // O열: 충전기 수량(기)
         const route = classifyRoute(row);
 
+        /* 누적 */
         if (d >= W.accum.s && d <= W.accum.e) {
             accumDoc[v]    = (accumDoc[v]||0)    + 1;
             accumDocQty[v] = (accumDocQty[v]||0) + qty;
             if (!vendorRouteAccumQty[v]) vendorRouteAccumQty[v] = {};
-            vendorRouteAccumQty[v][route] = (vendorRouteAccumQty[v][route]||0) + qty; // ← kW 누적
+            vendorRouteAccumQty[v][route] = (vendorRouteAccumQty[v][route]||0) + qty;
         }
+        /* 현재기간 */
         if (d >= W.cur.s && d <= W.cur.e) {
             curDoc[v]    = (curDoc[v]||0)    + 1;
             curDocQty[v] = (curDocQty[v]||0) + qty;
             totalQty    += qty;
-            routeSumCurQty[route] = (routeSumCurQty[route]||0) + qty; // ← kW 누적
+            routeSumCurQty[route] = (routeSumCurQty[route]||0) + qty;
         } else if (d >= W.pre.s && d <= W.pre.e) {
             preDoc[v] = (preDoc[v]||0) + 1;
         }
     });
 
-    const sum    = o => Object.values(o).reduce((a,b)=>a+b, 0);
-    const sumQty = o => Object.values(o).reduce((a,b)=>a+b, 0);
+    const sum = o => Object.values(o).reduce((a,b)=>a+b, 0);
 
     $('s-site').textContent = sum(curSite);
     $('s-ins').textContent  = sum(curIns);
     $('s-doc').textContent  = sum(curDoc);
-    $('s-qty').textContent  = totalQty.toLocaleString();
+    $('s-qty').textContent  = Math.round(totalQty).toLocaleString();
 
     /* 통합 요약 테이블 */
     renderSummaryTable({
         lbl, W,
-        curSite,  accumSite,
-        curIns,   accumIns,
-        curDoc,   accumDoc,
+        curSite, accumSite,
+        curIns,  accumIns,
+        curDoc,  accumDoc,
         curDocQty, accumDocQty,
-        vendorRouteAccumQty   // ← kW 기반 인입경로
+        vendorRouteAccumQty
     });
 
     renderCompTable('siteTable', curSite, preSite, lbl);
     renderCompTable('insTable',  curIns,  preIns,  lbl);
     renderDocTable('docTable',   curDoc,  preDoc,  curDocQty, lbl);
-    renderRouteTable(routeSumCurQty); // ← kW 기반
+    renderRouteTable(routeSumCurQty);
 
     drawCompChart('barSiteComp', curSite, preSite, lbl);
     drawCompChart('barInsComp',  curIns,  preIns,  lbl);
@@ -587,14 +597,16 @@ function renderAll() {
 }
 
 /* ============================================================
-   통합 요약 테이블
+   통합 요약 테이블 렌더링
+   컬럼: 업체명 | 현장등록(금주/누적) | 현장실사(금주/누적) |
+         계약완료건(금주/누적) | 계약완료기(금주/누적) |
+         인입경로별수량(신규/추가/자사/타사/투자) ← 충전기 대수(기)
 ============================================================ */
 function renderSummaryTable({ lbl, W,
     curSite, accumSite, curIns, accumIns,
     curDoc, accumDoc, curDocQty, accumDocQty,
     vendorRouteAccumQty }) {
 
-    /* 누적 컬럼 라벨: 연간모드 → '전년(YYYY)', 그 외 → '누적' */
     const accumLabel = mode === 'year'
         ? `전년(${W.yearLabel})`
         : `누적`;
@@ -606,7 +618,7 @@ function renderSummaryTable({ lbl, W,
       <th class="th-ins"   colspan="2">현장실사</th>
       <th class="th-dcnt"  colspan="2">계약완료(건)</th>
       <th class="th-dqty"  colspan="2">계약완료(기)</th>
-      <th class="th-route" colspan="5">인입경로별 계약수량 kW (${accumLabel})</th>
+      <th class="th-route" colspan="5">인입경로별 계약수량(기) — ${accumLabel}</th>
     </tr>
     <tr>
       <th class="th2-site">${lbl.cur}</th>
@@ -635,7 +647,7 @@ function renderSummaryTable({ lbl, W,
 
     const sum = o => Object.values(o).reduce((a,b)=>a+b, 0);
 
-    /* 인입경로 합계 (kW) */
+    /* 인입경로 합계(기) */
     const routeTotalAccumQty = {};
     ROUTE_KEYS.forEach(k => {
         routeTotalAccumQty[k] = Object.values(vendorRouteAccumQty)
@@ -655,57 +667,62 @@ function renderSummaryTable({ lbl, W,
     );
     tbody.appendChild(totalTr);
 
+    /* 업체별 행 */
     allVendors.forEach(v => {
         const tr = document.createElement('tr');
         tr.innerHTML = buildRow(
             v,
-            curSite[v]||0,    accumSite[v]||0,
-            curIns[v]||0,     accumIns[v]||0,
-            curDoc[v]||0,     accumDoc[v]||0,
-            curDocQty[v]||0,  accumDocQty[v]||0,
+            curSite[v]||0,   accumSite[v]||0,
+            curIns[v]||0,    accumIns[v]||0,
+            curDoc[v]||0,    accumDoc[v]||0,
+            curDocQty[v]||0, accumDocQty[v]||0,
             vendorRouteAccumQty[v]||{}, false
         );
         tbody.appendChild(tr);
     });
 }
 
+/* buildRow: 16컬럼 (업체명 + 금주/누적×4항목 + 인입경로5) */
 function buildRow(name,
-    cS, aS, cI, aI, cD, aD, cDQ, aDQ,
+    cS, aS,   /* 현장등록  금주/누적 */
+    cI, aI,   /* 현장실사  금주/누적 */
+    cD, aD,   /* 계약(건)  금주/누적 */
+    cDQ, aDQ, /* 계약(기)  금주/누적 */
     routeAccumQty, isTotal) {
 
-    /* 일반 숫자 셀 (건수) */
-    const cell = (v) => {
+    /* 건수 셀 */
+    const cell = v => {
         if (!v || v === 0) return `<td class="zero">-</td>`;
         return `<td class="${isTotal?'hl':''}">${Number(v).toLocaleString()}</td>`;
     };
-    /* kW 셀 — 소수점 없이, 0이면 - */
-    const cellKw = (v) => {
+    /* 수량(기) 셀 — 정수로 표시 */
+    const cellQ = v => {
         if (!v || v === 0) return `<td class="zero">-</td>`;
         return `<td class="${isTotal?'hl':''}">${Math.round(v).toLocaleString()}</td>`;
     };
 
-    const routeCells = ROUTE_KEYS.map(k => cellKw(routeAccumQty[k]||0)).join('');
+    const routeCells = ROUTE_KEYS.map(k => cellQ(routeAccumQty[k]||0)).join('');
     return `
       <td>${name}</td>
       ${cell(cS)}  ${cell(aS)}
       ${cell(cI)}  ${cell(aI)}
       ${cell(cD)}  ${cell(aD)}
-      ${cellKw(cDQ)} ${cellKw(aDQ)}
+      ${cellQ(cDQ)} ${cellQ(aDQ)}
       ${routeCells}`;
 }
 
 /* ============================================================
-   캡처 기능
+   캡처
 ============================================================ */
 async function captureTable() {
     const target = $('captureTarget');
-    const btn    = document.querySelector('.capture-btn');
+    const btn    = $('captureBtn');
     btn.textContent = '⏳ 캡처 중...';
     btn.disabled = true;
 
     try {
         const canvas = await html2canvas(target, {
-            scale: 3,               // 3배 해상도 → PPT 삽입 시 선명
+            scale: 3,
             backgroundColor: '#ffffff',
             useCORS: true,
             logging: false,
@@ -720,14 +737,12 @@ async function captureTable() {
         alert('캡처 중 오류가 발생했습니다.\n' + e.message);
     }
 
-    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px;">
-        <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="4"/>
-    </svg> 📷 요약표 캡처`;
+    btn.innerHTML = '📷 요약표 캡처';
     btn.disabled = false;
 }
 
 /* ============================================================
-   인입경로 테이블 (계약현황 탭) — kW 기반
+   인입경로 테이블 (계약현황 탭) — 기(대수) 기반
 ============================================================ */
 function renderRouteTable(routeSumQty) {
     const tbody = $('routeTable').querySelector('tbody');
@@ -742,10 +757,20 @@ function renderRouteTable(routeSumQty) {
           <td><span style="background:${col.bg};color:${col.color};
               padding:3px 9px;border-radius:10px;font-size:11px;font-weight:700;">
               ${ROUTE_LABELS[k]}</span></td>
-          <td style="font-weight:700;">${Math.round(v).toLocaleString()} kW</td>
+          <td style="font-weight:700;">${Math.round(v).toLocaleString()}</td>
           <td>${pct}%</td>
         </tr>`;
     });
+    if (routeSumQty['기타']) {
+        const v = routeSumQty['기타'];
+        const pct = total ? ((v/total)*100).toFixed(1) : 0;
+        tbody.innerHTML += `<tr>
+          <td><span style="background:#f1f5f9;color:#64748b;
+              padding:3px 9px;border-radius:10px;font-size:11px;font-weight:700;">기타</span></td>
+          <td style="font-weight:700;">${Math.round(v).toLocaleString()}</td>
+          <td>${pct}%</td>
+        </tr>`;
+    }
 }
 
 /* ============================================================
@@ -776,7 +801,7 @@ function renderDocTable(id, cur, pre, qtyMap, lbl) {
           <td>${p} <span style="font-size:10px;color:#94a3b8;">(${lbl.prev})</span></td>
           <td>${c} <span style="font-size:10px;color:#94a3b8;">(${lbl.cur})</span></td>
           <td class="${diff>=0?'up':'down'}">${diff>=0?'▲':'▼'} ${Math.abs(diff)}</td>
-          <td>${(qtyMap[v]||0).toLocaleString()} kW</td>
+          <td>${Math.round(qtyMap[v]||0).toLocaleString()}</td>
         </tr>`;
     });
 }
