@@ -209,8 +209,8 @@ body { background: var(--bg); color: var(--text); }
 <!-- 계약체결 건수 목록 -->
 <div class="cd" style="margin-top:0;">
   <h3 id="docListLabel">계약체결 목록 (금주)</h3>
-  <div style="overflow-x:auto;display:flex;justify-content:center;">
-    <table class="tbl" id="docListTable" style="width:max-content;min-width:600px;">
+  <div style="overflow-x:auto;padding:0 16px 16px;display:flex;justify-content:center;">
+    <table class="tbl" id="docListTable" style="width:max-content;min-width:900px;">
       <thead>
         <tr>
           <th>계약일</th>
@@ -218,6 +218,7 @@ body { background: var(--bg); color: var(--text); }
           <th>계약구분</th>
           <th>현장명</th>
           <th>계약수량(기)</th>
+          <th>주차면</th>
           <th>영업채널</th>
         </tr>
       </thead>
@@ -225,6 +226,7 @@ body { background: var(--bg); color: var(--text); }
     </table>
   </div>
 </div>
+
 
 
 
@@ -669,13 +671,17 @@ function renderAll(){
         date        : String(r[10]||''),
         contractType: String(r[11]||'').trim(),  // L열 계약구분
         bizType     : String(r[13]||'').trim(),  // N열 사업구분
-        siteName    : String(r[2]||'').trim(),   // C열 현장명 (서류목록 직접)
-        qty         : Math.round(q)
+        siteName    : String(r[2]||'').trim(),   // C열 현장명
+        qty         : Math.round(q),
+        // 주차면 — 현장목록 H열(index7)에서 현장명 매칭 후 조회
+        parkingSlot : (()=>{
+          const siteRow=STORE.site.slice(3).find(s=>
+            String(s[2]||'').trim()===String(r[2]||'').trim() && String(r[2]||'').trim()!==''
+          );
+          return siteRow ? String(siteRow[7]||'').trim() : '-';
+        })()
       });
-    } else if(d>=W.pre.s&&d<=W.pre.e){
-      pD[v]=(pD[v]||0)+1;
-    }
-  });
+
 
   const sum=o=>Object.values(o).reduce((a,b)=>a+b,0);
   const tSC=sum(cS), tSP=sum(pS);
@@ -856,12 +862,11 @@ function drawOverviewChart(tSC,tSP,tIC,tIP,tDC,tDP,tQC,lbl){
 function drawGoalChart(tSC,tIC,tDC,tQC){
   if(charts['barGoal']) charts['barGoal'].destroy();
 
-  // 연간 목표 13000기 기준 주간 목표 (52주)
-  const ANNUAL_GOAL = 13000;
-  const WEEKLY_GOAL_QTY  = Math.round(ANNUAL_GOAL / 52);  // ≈ 250기/주
-  const WEEKLY_GOAL_SITE = Math.round(WEEKLY_GOAL_QTY * 3);  // 대략 현장등록
-  const WEEKLY_GOAL_INS  = Math.round(WEEKLY_GOAL_QTY * 2);  // 대략 실사
-  const WEEKLY_GOAL_DOC  = Math.round(WEEKLY_GOAL_QTY / 5);  // 대략 계약건
+  // 고정 주간 목표
+  let GOAL_SITE = 50;
+  let GOAL_INS  = 50;
+  let GOAL_DOC  = 50;
+  let GOAL_QTY  = 250;
 
   // 모드별 목표 배율
   let mult=1;
@@ -870,18 +875,17 @@ function drawGoalChart(tSC,tIC,tDC,tQC){
   if(mode==='year')    mult=52;
 
   const goals=[
-    Math.round(WEEKLY_GOAL_SITE*mult),
-    Math.round(WEEKLY_GOAL_INS*mult),
-    Math.round(WEEKLY_GOAL_DOC*mult),
-    Math.round(WEEKLY_GOAL_QTY*mult)
+    Math.round(GOAL_SITE*mult),
+    Math.round(GOAL_INS*mult),
+    Math.round(GOAL_DOC*mult),
+    Math.round(GOAL_QTY*mult)
   ];
   const actuals=[tSC,tIC,tDC,tQC];
   const labels=['현장등록','현장실사','계약체결(건)','계약수량(기)'];
   const pcts=actuals.map((a,i)=>goals[i]?Math.round((a/goals[i])*100):0);
-
   const colors=pcts.map(p=>p>=100?'#10b981':p>=70?'#f59e0b':'#ef4444');
 
-  $('chartGoalLabel').textContent=`목표 달성률 (연간 ${ANNUAL_GOAL.toLocaleString()}기 기준)`;
+  $('chartGoalLabel').textContent=`목표 달성률 (현장·계약 주 50건 / 수량 250기 기준)`;
 
   charts['barGoal']=new Chart($('barGoal'),{
     type:'bar',
@@ -929,32 +933,31 @@ function renderDocList(rows, lbl){
   tb.innerHTML='';
 
   if(!rows.length){
-    tb.innerHTML=`<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:20px;">해당 기간 계약체결 내역이 없습니다.</td></tr>`;
+    tb.innerHTML=`<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:20px;">해당 기간 계약체결 내역이 없습니다.</td></tr>`;
     return;
   }
 
-  // 사업구분 오름차순 → 계약수량 내림차순 정렬
+  // 사업구분 오름차순 → 계약수량 내림차순
   rows.sort((a,b)=>{
-    const bizCompare = (a.bizType||'').localeCompare(b.bizType||'','ko');
-    if(bizCompare !== 0) return bizCompare;
-    return b.qty - a.qty;
+    const bizCompare=(a.bizType||'').localeCompare(b.bizType||'','ko');
+    if(bizCompare!==0) return bizCompare;
+    return b.qty-a.qty;
   });
+
+  const bizColors={
+    '투자설치':{bg:'#ede9fe',color:'#4c1d95'},
+    '신규계약':{bg:'#dcfce7',color:'#14532d'},
+    '추가계약':{bg:'#fef9c3',color:'#713f12'},
+    '자사교체':{bg:'#fce7f3',color:'#831843'},
+    '타사교체':{bg:'#fee2e2',color:'#7f1d1d'},
+  };
 
   rows.forEach(r=>{
     const d=parseD(r.date);
     const dateStr=d
       ?`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
       :'';
-
-    // 사업구분 배지 색상
-    const bizColors={
-      '투자설치':{bg:'#ede9fe',color:'#4c1d95'},
-      '신규계약':{bg:'#dcfce7',color:'#14532d'},
-      '추가계약':{bg:'#fef9c3',color:'#713f12'},
-      '자사교체':{bg:'#fce7f3',color:'#831843'},
-      '타사교체':{bg:'#fee2e2',color:'#7f1d1d'},
-    };
-    const bc = bizColors[r.bizType] || {bg:'#f1f5f9',color:'#475569'};
+    const bc=bizColors[r.bizType]||{bg:'#f1f5f9',color:'#475569'};
 
     tb.innerHTML+=`<tr>
       <td style="white-space:nowrap;">${dateStr}</td>
@@ -965,12 +968,14 @@ function renderDocList(rows, lbl){
         </span>
       </td>
       <td style="white-space:nowrap;">${r.contractType||'-'}</td>
-      <td>${r.siteName||'-'}</td>
+      <td style="min-width:160px;">${r.siteName||'-'}</td>
       <td style="font-weight:700;text-align:right;white-space:nowrap;">${r.qty.toLocaleString()}</td>
+      <td style="text-align:right;white-space:nowrap;">${r.parkingSlot||'-'}</td>
       <td style="white-space:nowrap;font-weight:600;">${r.vendor}</td>
     </tr>`;
   });
 }
+
 
 
 
