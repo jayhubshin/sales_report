@@ -113,6 +113,7 @@ body { background: var(--bg); color: var(--text); }
 </style>
 </head>
 <body>
+
 <!-- 불러오기 결과 모달 -->
 <div class="result-modal-bg" id="resultModal">
   <div class="result-modal">
@@ -128,21 +129,18 @@ body { background: var(--bg); color: var(--text); }
   <h1>📊 EPC 주간/월간 통합 대시보드</h1>
   <div id="clock" style="font-size:12px;color:#94a3b8;"></div>
 </div>
-
 <div class="tab-bar">
   <div class="tab on" onclick="chTab(0,this)">종합현황</div>
   <div class="tab" onclick="chTab(1,this)">현장현황(신규)</div>
   <div class="tab" onclick="chTab(2,this)">실사현황</div>
   <div class="tab" onclick="chTab(3,this)">계약현황</div>
 </div>
-
 <div class="sb-bar">
   <span style="color:#3ecf8e;font-size:13px;font-weight:800;">⚡ Supabase</span>
   <button class="sb-btn load" id="btnLoad" onclick="loadFromSupabase()">☁️ 불러오기</button>
   <div id="sbStatus" class="sb-status"></div>
-  <div id="sbLast"   class="sb-last"></div>
+  <div id="sbLast" class="sb-last"></div>
 </div>
-
 <div class="ua">
   <div class="upload-box" onclick="$('fIn').click()">📁 파일 선택 (데이터 업데이트)</div>
   <input type="file" id="fIn" webkitdirectory directory multiple
@@ -150,7 +148,6 @@ body { background: var(--bg); color: var(--text); }
   <div class="file-tags" id="tagBox"></div>
   <div class="last-updated" id="lastUpdated"></div>
 </div>
-
 <div class="pb">
   <div class="range-display" id="dateRange">기간 계산 중...</div>
   <button class="pbtn on" onclick="setMode('week',this)">주간</button>
@@ -222,19 +219,12 @@ body { background: var(--bg); color: var(--text); }
 </div>
 
 <script>
-/* ============================================================
-   ① Supabase 설정 — GitHub Actions가 빌드 시 자동 치환
-============================================================ */
-/*const _SB_URL    = '__SB_URL__';
+/* ① Supabase 설정 */
+const _SB_URL    = '__SB_URL__';
 const _SB_KEY    = '__SB_KEY__';
-const _SB_BUCKET = '__SB_BUCKET__';*/
-const _SB_URL    = 'https://ucwxszwfqaqurkvogdox.supabase.co';
-const _SB_KEY    = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjd3hzendmcWFxdXJrdm9nZG94Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjkzOTU1NiwiZXhwIjoyMDkyNTE1NTU2fQ.UiqOhHv0Y6pWF1vEhANUKcaOmLGTxafSYCZvEh-x9U4';
-const _SB_BUCKET = 'epc-data';
+const _SB_BUCKET = '__SB_BUCKET__';
 
-/* ============================================================
-   ② 전역
-============================================================ */
+/* ② 전역 */
 let STORE={site:[],ins:[],doc:[]}, mode='week', charts={};
 const $=id=>document.getElementById(id);
 $('baseDate').value=new Date().toISOString().slice(0,10);
@@ -256,9 +246,7 @@ const MODE_LABEL={
 };
 const FILE_MAP={site:'site.xlsx',ins:'ins.xlsx',doc:'doc.xlsx'};
 
-/* ============================================================
-   ③ Supabase 클라이언트
-============================================================ */
+/* ③ Supabase 클라이언트 */
 let sbClient=null;
 function getSbClient(){
   if(sbClient) return sbClient;
@@ -267,9 +255,7 @@ function getSbClient(){
   return sbClient;
 }
 
-/* ============================================================
-   ④ 상태 표시
-============================================================ */
+/* ④ 상태 표시 */
 function setStatus(msg,type,autoClear){
   const el=$('sbStatus');
   el.textContent=msg;
@@ -277,9 +263,7 @@ function setStatus(msg,type,autoClear){
   if(autoClear) setTimeout(()=>{el.className='sb-status';},autoClear);
 }
 
-/* ============================================================
-   ⑤ Supabase 저장
-============================================================ */
+/* ⑤ Supabase 저장 */
 async function saveToSupabase(storeKey,arrayBuffer){
   const client=getSbClient();
   if(!client) throw new Error('Supabase 클라이언트 없음');
@@ -294,24 +278,13 @@ async function saveToSupabase(storeKey,arrayBuffer){
   if(error) throw new Error(error.message);
 }
 
-/* ============================================================
-   ⑥ Supabase 불러오기
-============================================================ */
+/* ⑥ Supabase 불러오기 — 단일 정의 */
 async function loadFromSupabase(){
-  console.log('▶ loadFromSupabase 시작');
-  console.log('_SB_URL:', _SB_URL);
-  console.log('_SB_KEY 길이:', _SB_KEY?.length);
-  console.log('_SB_BUCKET:', _SB_BUCKET);
-
   const client=getSbClient();
-  console.log('client:', client);
-
   if(!client){
-    console.warn('❌ client null — Supabase 미설정');
     setStatus('⚠️ Supabase 미설정','err',5000);
     return;
   }
-
   setStatus('☁️ 불러오는 중...','ing');
   $('btnLoad').disabled=true;
   $('tagBox').innerHTML='';
@@ -323,17 +296,12 @@ async function loadFromSupabase(){
   for(const storeKey of ['site','ins','doc']){
     const fileName=FILE_MAP[storeKey];
     const label=labelMap[storeKey];
-    console.log(`▶ ${label} 다운로드 시도: ${fileName}`);
-
     const tag=document.createElement('div');
     tag.className='tag ing';
     tag.textContent=`⏳ ${label} 불러오는 중...`;
     $('tagBox').appendChild(tag);
-
     try{
       const{data,error}=await client.storage.from(_SB_BUCKET).download(fileName);
-      console.log(`${label} 응답 — error:`, error, 'data:', data);
-
       if(error) throw new Error(error.message);
       const buf=await data.arrayBuffer();
       const wb=XLSX.read(new Uint8Array(buf),{type:'array'});
@@ -343,9 +311,7 @@ async function loadFromSupabase(){
       tag.className='tag ok';
       tag.textContent=`☁️ ${label} 로드완료`;
       results.push({type:'ok',label,rows:rows.length});
-      console.log(`✅ ${label} 로드 완료 — ${rows.length}행`);
     }catch(e){
-      console.error(`❌ ${label} 오류:`, e.message);
       const isNotFound=e.message.includes('Object not found')||e.message.includes('404');
       if(isNotFound){
         notFound++;
@@ -355,7 +321,7 @@ async function loadFromSupabase(){
       }else{
         failed++;
         tag.className='tag fail';
-        tag.textContent=`❌ ${label} 실패: ${e.message}`;
+        tag.textContent=`❌ ${label} 실패`;
         results.push({type:'fail',label,msg:e.message});
       }
     }
@@ -371,7 +337,7 @@ async function loadFromSupabase(){
     setStatus(`❌ 전체 로드 실패 (${failed}개 오류)`,'err',8000);
   }else if(failed>0){
     setStatus(`⚠️ ${loaded}개 성공 / ${failed}개 실패`,'err',8000);
-  }else if(loaded===0){
+  }else if(loaded===0&&notFound===3){
     setStatus('📭 저장된 파일 없음','err',6000);
   }else if(notFound>0){
     setStatus(`✅ ${loaded}개 로드 완료 (${notFound}개 미업로드)`,'ok',5000);
@@ -379,35 +345,12 @@ async function loadFromSupabase(){
     setStatus(`✅ ${loaded}개 전체 로드 완료`,'ok',4000);
   }
 
-  console.log('▶ showResultModal 호출 — loaded:', loaded, 'failed:', failed, 'notFound:', notFound);
-
-  // resultModal 존재 여부 확인
-  const modalEl = document.getElementById('resultModal');
-  console.log('resultModal 요소:', modalEl);
-
-  if(modalEl){
-    showResultModal(results, loaded, failed, notFound, now);
-  }else{
-    console.error('❌ resultModal 요소가 HTML에 없습니다. 모달 HTML을 추가하세요.');
-    // 모달 없으면 alert로 대체
-    const summary = results.map(r=>{
-      if(r.type==='ok')    return `✅ ${r.label} (${r.rows}행)`;
-      if(r.type==='empty') return `📭 ${r.label} (미업로드)`;
-      return `❌ ${r.label} (${r.msg})`;
-    }).join('\n');
-    alert(`불러오기 결과\n\n${summary}`);
-  }
-
+  showResultModal(results,loaded,failed,notFound,now);
   if(loaded>0) renderAll();
   $('btnLoad').disabled=false;
 }
 
-/* ============================================================
-   ⑦ 파일 업로드 — Supabase 실패해도 로컬 파싱은 유지
-============================================================ */
-/* ============================================================
-   ⑦ 파일 업로드 — 상태 표시 강화
-============================================================ */
+/* ⑦ 파일 업로드 */
 async function loadFiles(files){
   const keyMap={'현장목록':'site','실사목록':'ins','서류목록':'doc'};
   const latest={};
@@ -419,28 +362,23 @@ async function loadFiles(files){
     return;
   }
   $('tagBox').innerHTML='';
-
   let client=null;
   try{ client=getSbClient(); }catch(e){ client=null; }
   const hasSb=!!client;
   if(hasSb) setStatus('⬆️ 업로드 중...','ing');
-
-  let localOk=0, localFail=0, sbOk=0, sbFail=0;
+  let localOk=0,localFail=0,sbOk=0,sbFail=0;
 
   for(const k in latest){
-    const file=latest[k], storeKey=keyMap[k];
+    const file=latest[k],storeKey=keyMap[k];
     const tag=document.createElement('div');
     tag.className='tag ing';
     tag.textContent=`⏳ ${k} 읽는 중...`;
     $('tagBox').appendChild(tag);
     try{
-      // ── 로컬 파싱
       const buf=await readFileAsArrayBuffer(file);
       const wb=XLSX.read(new Uint8Array(buf),{type:'array'});
       STORE[storeKey]=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1});
       localOk++;
-
-      // ── Supabase 저장
       if(hasSb){
         tag.textContent=`⬆️ ${k} 저장 중...`;
         try{
@@ -450,9 +388,8 @@ async function loadFiles(files){
           tag.textContent=`✅ ${k} ☁️ 저장완료`;
         }catch(sbErr){
           sbFail++;
-          tag.className='tag ok'; // 로컬은 성공
-          tag.textContent=`⚠️ ${k} (로컬만 — 클라우드 실패)`;
-          // 실패 상세 태그 추가
+          tag.className='tag ok';
+          tag.textContent=`⚠️ ${k} (로컬만)`;
           const errTag=document.createElement('div');
           errTag.className='tag fail';
           errTag.textContent=`☁️ ${k} 실패: ${sbErr.message}`;
@@ -469,95 +406,17 @@ async function loadFiles(files){
     }
   }
 
-  // ── 최종 상태 메시지
   const now=new Date().toLocaleString('ko-KR');
   $('lastUpdated').textContent=`업데이트: ${now}`;
-
   if(hasSb){
-    if(sbFail>0 && sbOk===0){
-      setStatus(`❌ 클라우드 저장 전체 실패 (로컬 ${localOk}개는 정상)`,'err',8000);
-    }else if(sbFail>0){
-      setStatus(`⚠️ 클라우드 ${sbOk}개 성공 / ${sbFail}개 실패`,'err',8000);
-    }else{
-      setStatus(`✅ ${sbOk}개 Supabase 저장 완료`,'ok',4000);
-    }
+    if(sbFail>0&&sbOk===0) setStatus(`❌ 클라우드 저장 실패 (로컬 ${localOk}개 정상)`,'err',8000);
+    else if(sbFail>0)      setStatus(`⚠️ 클라우드 ${sbOk}개 성공 / ${sbFail}개 실패`,'err',8000);
+    else                   setStatus(`✅ ${sbOk}개 Supabase 저장 완료`,'ok',4000);
   }else{
-    if(localFail>0){
-      setStatus(`⚠️ ${localOk}개 성공 / ${localFail}개 읽기 실패`,'err',6000);
-    }else{
-      setStatus(`✅ ${localOk}개 로컬 로드 완료`,'ok',4000);
-    }
+    if(localFail>0) setStatus(`⚠️ ${localOk}개 성공 / ${localFail}개 실패`,'err',6000);
+    else            setStatus(`✅ ${localOk}개 로컬 로드 완료`,'ok',4000);
   }
-
   if(localOk>0) renderAll();
-}
-
-/* ============================================================
-   ⑥ Supabase 불러오기 — 상태 표시 강화
-============================================================ */
-async function loadFromSupabase(){
-  const client=getSbClient();
-  if(!client){
-    setStatus('⚠️ Supabase 미설정','err',5000);
-    return;
-  }
-  setStatus('☁️ 불러오는 중...','ing');
-  $('btnLoad').disabled=true;
-  $('tagBox').innerHTML='';
-
-  const labelMap={site:'현장목록',ins:'실사목록',doc:'서류목록'};
-  let loaded=0, notFound=0, failed=0;
-
-  for(const storeKey of ['site','ins','doc']){
-    const fileName=FILE_MAP[storeKey];
-    const tag=document.createElement('div');
-    tag.className='tag ing';
-    tag.textContent=`⏳ ${labelMap[storeKey]} 불러오는 중...`;
-    $('tagBox').appendChild(tag);
-    try{
-      const{data,error}=await client.storage.from(_SB_BUCKET).download(fileName);
-      if(error) throw new Error(error.message);
-      const buf=await data.arrayBuffer();
-      const wb=XLSX.read(new Uint8Array(buf),{type:'array'});
-      STORE[storeKey]=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1});
-      loaded++;
-      tag.className='tag ok';
-      tag.textContent=`☁️ ${labelMap[storeKey]} 로드완료`;
-    }catch(e){
-      const isNotFound=e.message.includes('Object not found')||e.message.includes('404');
-      if(isNotFound){
-        notFound++;
-        tag.className='tag';
-        tag.textContent=`📭 ${labelMap[storeKey]} 미업로드`;
-      }else{
-        failed++;
-        tag.className='tag fail';
-        tag.textContent=`❌ ${labelMap[storeKey]} 실패: ${e.message}`;
-      }
-    }
-  }
-
-  // ── 최종 상태 메시지
-  const now=new Date().toLocaleString('ko-KR');
-  if(loaded>0){
-    $('sbLast').textContent=`마지막 동기화: ${now}`;
-    $('lastUpdated').textContent=`Supabase 동기화: ${now}`;
-  }
-
-  if(failed>0 && loaded===0){
-    setStatus(`❌ 전체 로드 실패 (${failed}개 오류)`,'err',8000);
-  }else if(failed>0){
-    setStatus(`⚠️ ${loaded}개 성공 / ${failed}개 실패`,'err',8000);
-  }else if(loaded===0 && notFound===3){
-    setStatus('📭 저장된 파일 없음 — 파일을 먼저 업로드하세요','err',6000);
-  }else if(notFound>0){
-    setStatus(`✅ ${loaded}개 로드 완료 (${notFound}개 미업로드)`,'ok',5000);
-  }else{
-    setStatus(`✅ ${loaded}개 전체 로드 완료`,'ok',4000);
-  }
-
-  if(loaded>0) renderAll();
-  $('btnLoad').disabled=false;
 }
 
 function readFileAsArrayBuffer(file){
@@ -575,9 +434,27 @@ window.addEventListener('DOMContentLoaded',()=>{
   else setStatus('⚠️ Supabase 미설정 (로컬 모드)','err',5000);
 });
 
-/* ============================================================
-   ⑧ 분석 / 렌더링
-============================================================ */
+/* ⑧ 결과 모달 */
+function showResultModal(results,loadedCount,failedCount,notFoundCount,time){
+  $('resultRows').innerHTML=results.map(r=>{
+    if(r.type==='ok')    return`<div class="result-row ok"><span class="r-name">📄 ${r.label}</span><span class="r-status">✅ 로드 완료 (${r.rows.toLocaleString()}행)</span></div>`;
+    if(r.type==='empty') return`<div class="result-row empty"><span class="r-name">📭 ${r.label}</span><span class="r-status">미업로드 파일</span></div>`;
+    return`<div class="result-row fail"><span class="r-name">❌ ${r.label}</span><span class="r-status">${r.msg}</span></div>`;
+  }).join('');
+  const s=$('resultSummary');
+  if(failedCount>0&&loadedCount===0){s.className='result-summary all-fail';s.textContent=`❌ 전체 로드 실패 — ${failedCount}개 오류`;}
+  else if(failedCount>0){s.className='result-summary partial';s.textContent=`⚠️ ${loadedCount}개 성공 / ${failedCount}개 실패 / ${notFoundCount}개 미업로드`;}
+  else if(loadedCount===0){s.className='result-summary empty';s.textContent='📭 저장된 파일이 없습니다. 파일을 먼저 업로드하세요.';}
+  else if(notFoundCount>0){s.className='result-summary partial';s.textContent=`✅ ${loadedCount}개 로드 완료 / ${notFoundCount}개 미업로드`;}
+  else{s.className='result-summary all-ok';s.textContent=`✅ ${loadedCount}개 전체 로드 완료`;}
+  $('resultTime').textContent=`동기화 시각: ${time}`;
+  $('resultModal').classList.add('on');
+}
+function closeResultModal(){
+  $('resultModal').classList.remove('on');
+}
+
+/* ⑨ 분석 / 렌더링 */
 function classifyRoute(row){
   const b=String(row[13]||'').trim(),l=String(row[11]||'').trim();
   if(b.includes('투자설치')) return'투자설치';
@@ -708,7 +585,7 @@ function renderSummaryTable({lbl,W,curSite,accumSite,curIns,accumIns,curDoc,accu
     </tr>
     <tr>
       <th class="th2-site">${lbl.cur}</th><th class="th2-site">${aL}</th>
-      <th class="th2-ins">${lbl.cur}</th> <th class="th2-ins">${aL}</th>
+      <th class="th2-ins">${lbl.cur}</th><th class="th2-ins">${aL}</th>
       <th class="th2-dcnt">${lbl.cur}</th><th class="th2-dcnt">${aL}</th>
       <th class="th2-dqty">${lbl.cur}</th><th class="th2-dqty">${aL}</th>
       <th class="th2-r1">신규</th><th class="th2-r2">추가</th>
@@ -717,25 +594,20 @@ function renderSummaryTable({lbl,W,curSite,accumSite,curIns,accumIns,curDoc,accu
   const tb=$('summaryTbody');tb.innerHTML='';
   const allV=Array.from(new Set([
     ...Object.keys(accumSite),...Object.keys(accumIns),
-    ...Object.keys(accumDoc), ...Object.keys(curSite),
-    ...Object.keys(curIns),   ...Object.keys(curDoc)
+    ...Object.keys(accumDoc),...Object.keys(curSite),
+    ...Object.keys(curIns),...Object.keys(curDoc)
   ])).sort((a,b)=>(accumSite[b]||0)-(accumSite[a]||0));
   const sum=o=>Object.values(o).reduce((a,b)=>a+b,0);
   const rT={};
-  ROUTE_KEYS.forEach(k=>{
-    rT[k]=Object.values(vendorRouteAccumQty).reduce((s,r)=>s+(r[k]||0),0);
-  });
+  ROUTE_KEYS.forEach(k=>{rT[k]=Object.values(vendorRouteAccumQty).reduce((s,r)=>s+(r[k]||0),0);});
   const tTr=document.createElement('tr');tTr.className='total-row';
   tTr.innerHTML=buildRow('합계',sum(curSite),sum(accumSite),sum(curIns),sum(accumIns),
     sum(curDoc),sum(accumDoc),sum(curDocQty),sum(accumDocQty),rT,true);
   tb.appendChild(tTr);
   allV.forEach(v=>{
     const tr=document.createElement('tr');
-    tr.innerHTML=buildRow(v,
-      curSite[v]||0,  accumSite[v]||0,
-      curIns[v]||0,   accumIns[v]||0,
-      curDoc[v]||0,   accumDoc[v]||0,
-      curDocQty[v]||0,accumDocQty[v]||0,
+    tr.innerHTML=buildRow(v,curSite[v]||0,accumSite[v]||0,curIns[v]||0,accumIns[v]||0,
+      curDoc[v]||0,accumDoc[v]||0,curDocQty[v]||0,accumDocQty[v]||0,
       vendorRouteAccumQty[v]||{},false);
     tb.appendChild(tr);
   });
@@ -809,59 +681,6 @@ function drawPieChart(id,labels,data,colors){
   });
 }
 setInterval(()=>{$('clock').textContent=new Date().toLocaleString();},1000);
-/* ============================================================
-   불러오기 결과 모달
-============================================================ */
-function showResultModal(results, loadedCount, failedCount, notFoundCount, time){
-  const rows = document.getElementById('resultRows');
-  const summary = document.getElementById('resultSummary');
-  const timeEl = document.getElementById('resultTime');
-
-  rows.innerHTML = results.map(r => {
-    if(r.type === 'ok'){
-      return `<div class="result-row ok">
-        <span class="r-name">📄 ${r.label}</span>
-        <span class="r-status">✅ 로드 완료 (${r.rows.toLocaleString()}행)</span>
-      </div>`;
-    }else if(r.type === 'empty'){
-      return `<div class="result-row empty">
-        <span class="r-name">📭 ${r.label}</span>
-        <span class="r-status">미업로드 파일</span>
-      </div>`;
-    }else{
-      return `<div class="result-row fail">
-        <span class="r-name">❌ ${r.label}</span>
-        <span class="r-status">${r.msg}</span>
-      </div>`;
-    }
-  }).join('');
-
-  const total = loadedCount + failedCount + notFoundCount;
-  if(failedCount > 0 && loadedCount === 0){
-    summary.className = 'result-summary all-fail';
-    summary.textContent = `❌ 전체 로드 실패 — ${failedCount}개 오류 발생`;
-  }else if(failedCount > 0){
-    summary.className = 'result-summary partial';
-    summary.textContent = `⚠️ ${loadedCount}개 성공 / ${failedCount}개 실패 / ${notFoundCount}개 미업로드`;
-  }else if(loadedCount === 0){
-    summary.className = 'result-summary empty';
-    summary.textContent = '📭 저장된 파일이 없습니다. 파일을 먼저 업로드하세요.';
-  }else if(notFoundCount > 0){
-    summary.className = 'result-summary partial';
-    summary.textContent = `✅ ${loadedCount}개 로드 완료 / ${notFoundCount}개 미업로드`;
-  }else{
-    summary.className = 'result-summary all-ok';
-    summary.textContent = `✅ ${loadedCount}개 전체 로드 완료`;
-  }
-
-  timeEl.textContent = `동기화 시각: ${time}`;
-  document.getElementById('resultModal').classList.add('on');
-}
-
-function closeResultModal(){
-  document.getElementById('resultModal').classList.remove('on');
-}
-
 </script>
 </body>
 </html>
