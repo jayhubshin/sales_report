@@ -113,7 +113,8 @@ body { background: var(--bg); color: var(--text); }
 
 <div class="ua">
   <div class="upload-box" onclick="$('fIn').click()">📁 파일 선택 (데이터 업데이트)</div>
-  <input type="file" id="fIn" webkitdirectory directory multiple style="display:none" onchange="loadFiles(this.files)">
+  <input type="file" id="fIn" webkitdirectory directory multiple
+    style="display:none" onchange="loadFiles(this.files)">
   <div class="file-tags" id="tagBox"></div>
   <div class="last-updated" id="lastUpdated"></div>
 </div>
@@ -124,7 +125,9 @@ body { background: var(--bg); color: var(--text); }
   <button class="pbtn" onclick="setMode('month',this)">월간</button>
   <button class="pbtn" onclick="setMode('quarter',this)">분기</button>
   <button class="pbtn" onclick="setMode('year',this)">연간</button>
-  <input type="date" id="baseDate" style="padding:5px;border:1px solid var(--border);border-radius:6px;" onchange="renderAll()">
+  <input type="date" id="baseDate"
+    style="padding:5px;border:1px solid var(--border);border-radius:6px;"
+    onchange="renderAll()">
 </div>
 
 <!-- 종합현황 -->
@@ -189,7 +192,6 @@ body { background: var(--bg); color: var(--text); }
 <script>
 /* ============================================================
    ① Supabase 설정 — GitHub Actions가 빌드 시 자동 치환
-      소스코드에는 플레이스홀더만 존재, 실제 값은 노출 안 됨
 ============================================================ */
 const _SB_URL    = '__SB_URL__';
 const _SB_KEY    = '__SB_KEY__';
@@ -220,17 +222,13 @@ const MODE_LABEL={
 const FILE_MAP={site:'site.xlsx',ins:'ins.xlsx',doc:'doc.xlsx'};
 
 /* ============================================================
-   ③ Supabase 클라이언트 — 플레이스홀더가 치환된 값으로 생성
+   ③ Supabase 클라이언트
 ============================================================ */
-let sbClient = null;
-
+let sbClient=null;
 function getSbClient(){
   if(sbClient) return sbClient;
-  if(_SB_URL.startsWith('__')){
-    console.warn('Supabase 설정이 주입되지 않았습니다. GitHub Actions Secrets를 확인하세요.');
-    return null;
-  }
-  sbClient = supabase.createClient(_SB_URL, _SB_KEY);
+  if(_SB_URL.startsWith('__')) return null;
+  sbClient=supabase.createClient(_SB_URL,_SB_KEY);
   return sbClient;
 }
 
@@ -247,14 +245,14 @@ function setStatus(msg,type,autoClear){
 /* ============================================================
    ⑤ Supabase 저장
 ============================================================ */
-async function saveToSupabase(storeKey, arrayBuffer){
-  const client = getSbClient();
-  if(!client) throw new Error('Supabase 클라이언트가 없습니다.');
-  const fileName = FILE_MAP[storeKey];
-  const blob = new Blob([arrayBuffer],{
+async function saveToSupabase(storeKey,arrayBuffer){
+  const client=getSbClient();
+  if(!client) throw new Error('Supabase 클라이언트 없음');
+  const fileName=FILE_MAP[storeKey];
+  const blob=new Blob([arrayBuffer],{
     type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   });
-  const{error} = await client.storage.from(_SB_BUCKET).upload(fileName, blob,{
+  const{error}=await client.storage.from(_SB_BUCKET).upload(fileName,blob,{
     contentType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     upsert:true
   });
@@ -265,9 +263,9 @@ async function saveToSupabase(storeKey, arrayBuffer){
    ⑥ Supabase 불러오기
 ============================================================ */
 async function loadFromSupabase(){
-  const client = getSbClient();
+  const client=getSbClient();
   if(!client){
-    setStatus('⚠️ Supabase 미설정 — Actions Secrets 확인','err',5000);
+    setStatus('⚠️ Supabase 미설정','err',5000);
     return;
   }
   setStatus('☁️ 불러오는 중...','ing');
@@ -304,13 +302,13 @@ async function loadFromSupabase(){
     setStatus(`✅ ${loaded}개 로드 완료`,'ok',4000);
     renderAll();
   }else{
-    setStatus('❌ 로드 실패 — 파일이 없거나 버킷 오류','err',5000);
+    setStatus('❌ 로드 실패 — 파일 없거나 버킷 오류','err',5000);
   }
   $('btnLoad').disabled=false;
 }
 
 /* ============================================================
-   ⑦ 파일 업로드
+   ⑦ 파일 업로드 — Supabase 실패해도 로컬 파싱은 유지
 ============================================================ */
 async function loadFiles(files){
   const keyMap={'현장목록':'site','실사목록':'ins','서류목록':'doc'};
@@ -324,11 +322,9 @@ async function loadFiles(files){
   }
   $('tagBox').innerHTML='';
 
-  // Supabase 클라이언트 — 없어도 로컬 파싱은 계속 진행
-  let client = null;
-  try{ client = getSbClient(); }catch(e){ client = null; }
-  const hasSb = !!client;
-
+  let client=null;
+  try{ client=getSbClient(); }catch(e){ client=null; }
+  const hasSb=!!client;
   if(hasSb) setStatus('⬆️ 업로드 중...','ing');
 
   for(const k in latest){
@@ -338,25 +334,29 @@ async function loadFiles(files){
     tag.textContent=`⏳ ${k}`;
     $('tagBox').appendChild(tag);
     try{
+      // 로컬 파싱 — 항상 실행
       const buf=await readFileAsArrayBuffer(file);
       const wb=XLSX.read(new Uint8Array(buf),{type:'array'});
       STORE[storeKey]=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1});
 
-      // Supabase 저장은 실패해도 로컬 데이터는 유지
+      // Supabase 저장 — 실패해도 로컬 데이터 유지
       if(hasSb){
         try{
           await saveToSupabase(storeKey,buf);
-          tag.className='tag ok';tag.textContent=`✅ ${k} ☁️`;
+          tag.className='tag ok';
+          tag.textContent=`✅ ${k} ☁️`;
         }catch(sbErr){
-          // Supabase 실패해도 로컬 파싱 결과는 살림
-          tag.className='tag ok';tag.textContent=`✅ ${k} (로컬만)`;
+          tag.className='tag ok';
+          tag.textContent=`✅ ${k} (로컬)`;
           setStatus(`⚠️ 클라우드 저장 실패: ${sbErr.message}`,'err',6000);
         }
       }else{
-        tag.className='tag ok';tag.textContent=`✅ ${k}`;
+        tag.className='tag ok';
+        tag.textContent=`✅ ${k}`;
       }
     }catch(e){
-      tag.className='tag fail';tag.textContent=`❌ ${k}: ${e.message}`;
+      tag.className='tag fail';
+      tag.textContent=`❌ ${k}: ${e.message}`;
     }
   }
 
@@ -364,7 +364,6 @@ async function loadFiles(files){
   $('lastUpdated').textContent=`업데이트: ${new Date().toLocaleString('ko-KR')}`;
   renderAll();
 }
-
 
 function readFileAsArrayBuffer(file){
   return new Promise((res,rej)=>{
@@ -382,7 +381,7 @@ window.addEventListener('DOMContentLoaded',()=>{
 });
 
 /* ============================================================
-   ⑧ 분석 / 렌더링 — 원본 V5 그대로
+   ⑧ 분석 / 렌더링
 ============================================================ */
 function classifyRoute(row){
   const b=String(row[13]||'').trim(),l=String(row[11]||'').trim();
@@ -528,7 +527,9 @@ function renderSummaryTable({lbl,W,curSite,accumSite,curIns,accumIns,curDoc,accu
   ])).sort((a,b)=>(accumSite[b]||0)-(accumSite[a]||0));
   const sum=o=>Object.values(o).reduce((a,b)=>a+b,0);
   const rT={};
-  ROUTE_KEYS.forEach(k=>{rT[k]=Object.values(vendorRouteAccumQty).reduce((s,r)=>s+(r[k]||0),0);});
+  ROUTE_KEYS.forEach(k=>{
+    rT[k]=Object.values(vendorRouteAccumQty).reduce((s,r)=>s+(r[k]||0),0);
+  });
   const tTr=document.createElement('tr');tTr.className='total-row';
   tTr.innerHTML=buildRow('합계',sum(curSite),sum(accumSite),sum(curIns),sum(accumIns),
     sum(curDoc),sum(accumDoc),sum(curDocQty),sum(accumDocQty),rT,true);
@@ -555,7 +556,8 @@ async function captureTable(){
   try{
     const canvas=await html2canvas($('captureTarget'),{scale:3,backgroundColor:'#fff',useCORS:true,logging:false});
     const link=document.createElement('a');
-    const now=new Date(),ts=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+    const now=new Date();
+    const ts=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
     link.download=`EPC_실적요약_${ts}.png`;
     link.href=canvas.toDataURL('image/png');
     link.click();
