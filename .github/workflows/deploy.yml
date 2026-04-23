@@ -25,10 +25,33 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Inject Supabase secrets
+        env:
+          SB_URL: ${{ secrets.SB_URL }}
+          SB_KEY: ${{ secrets.SB_KEY }}
+          SB_BUCKET: ${{ secrets.SB_BUCKET }}
         run: |
-          sed -i "s|__SB_URL__|${{ secrets.SB_URL }}|g"       index.html
-          sed -i "s|__SB_KEY__|${{ secrets.SB_KEY }}|g"       index.html
-          sed -i "s|__SB_BUCKET__|${{ secrets.SB_BUCKET }}|g" index.html
+          # 환경변수로 받아서 Python으로 치환 (sed 특수문자 문제 방지)
+          python3 - <<'EOF'
+          import os
+
+          url    = os.environ['SB_URL']
+          key    = os.environ['SB_KEY']
+          bucket = os.environ['SB_BUCKET']
+
+          with open('index.html', 'r', encoding='utf-8') as f:
+              html = f.read()
+
+          html = html.replace('__SB_URL__',    url)
+          html = html.replace('__SB_KEY__',    key)
+          html = html.replace('__SB_BUCKET__', bucket)
+
+          with open('index.html', 'w', encoding='utf-8') as f:
+              f.write(html)
+
+          print(f"✅ 치환 완료")
+          print(f"   URL    : {url[:20]}...")
+          print(f"   BUCKET : {bucket}")
+          EOF
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
