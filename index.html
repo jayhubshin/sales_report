@@ -310,6 +310,9 @@ async function loadFromSupabase(){
 /* ============================================================
    ⑦ 파일 업로드 — Supabase 실패해도 로컬 파싱은 유지
 ============================================================ */
+/* ============================================================
+   ⑦ 파일 업로드 — 상태 표시 강화
+============================================================ */
 async function loadFiles(files){
   const keyMap={'현장목록':'site','실사목록':'ins','서류목록':'doc'};
   const latest={};
@@ -327,42 +330,139 @@ async function loadFiles(files){
   const hasSb=!!client;
   if(hasSb) setStatus('⬆️ 업로드 중...','ing');
 
+  let localOk=0, localFail=0, sbOk=0, sbFail=0;
+
   for(const k in latest){
     const file=latest[k], storeKey=keyMap[k];
     const tag=document.createElement('div');
     tag.className='tag ing';
-    tag.textContent=`⏳ ${k}`;
+    tag.textContent=`⏳ ${k} 읽는 중...`;
     $('tagBox').appendChild(tag);
     try{
-      // 로컬 파싱 — 항상 실행
+      // ── 로컬 파싱
       const buf=await readFileAsArrayBuffer(file);
       const wb=XLSX.read(new Uint8Array(buf),{type:'array'});
       STORE[storeKey]=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1});
+      localOk++;
 
-      // Supabase 저장 — 실패해도 로컬 데이터 유지
+      // ── Supabase 저장
       if(hasSb){
+        tag.textContent=`⬆️ ${k} 저장 중...`;
         try{
           await saveToSupabase(storeKey,buf);
+          sbOk++;
           tag.className='tag ok';
-          tag.textContent=`✅ ${k} ☁️`;
+          tag.textContent=`✅ ${k} ☁️ 저장완료`;
         }catch(sbErr){
-          tag.className='tag ok';
-          tag.textContent=`✅ ${k} (로컬)`;
-          setStatus(`⚠️ 클라우드 저장 실패: ${sbErr.message}`,'err',6000);
+          sbFail++;
+          tag.className='tag ok'; // 로컬은 성공
+          tag.textContent=`⚠️ ${k} (로컬만 — 클라우드 실패)`;
+          // 실패 상세 태그 추가
+          const errTag=document.createElement('div');
+          errTag.className='tag fail';
+          errTag.textContent=`☁️ ${k} 실패: ${sbErr.message}`;
+          $('tagBox').appendChild(errTag);
         }
       }else{
         tag.className='tag ok';
-        tag.textContent=`✅ ${k}`;
+        tag.textContent=`✅ ${k} (로컬)`;
       }
     }catch(e){
+      localFail++;
       tag.className='tag fail';
-      tag.textContent=`❌ ${k}: ${e.message}`;
+      tag.textContent=`❌ ${k} 읽기 실패: ${e.message}`;
     }
   }
 
-  if(hasSb) setStatus('✅ Supabase 저장 완료','ok',4000);
-  $('lastUpdated').textContent=`업데이트: ${new Date().toLocaleString('ko-KR')}`;
-  renderAll();
+  // ── 최종 상태 메시지
+  const now=new Date().toLocaleString('ko-KR');
+  $('lastUpdated').textContent=`업데이트: ${now}`;
+
+  if(hasSb){
+    if(sbFail>0 && sbOk===0){
+      setStatus(`❌ 클라우드 저장 전체 실패 (로컬 ${localOk}개는 정상)`,'err',8000);
+    }else if(sbFail>0){
+      setStatus(`⚠️ 클라우드 ${sbOk}개 성공 / ${sbFail}개 실패`,'err',8000);
+    }else{
+      setStatus(`✅ ${sbOk}개 Supabase 저장 완료`,'ok',4000);
+    }
+  }else{
+    if(localFail>0){
+      setStatus(`⚠️ ${localOk}개 성공 / ${localFail}개 읽기 실패`,'err',6000);
+    }else{
+      setStatus(`✅ ${localOk}개 로컬 로드 완료`,'ok',4000);
+    }
+  }
+
+  if(localOk>0) renderAll();
+}
+
+/* ============================================================
+   ⑥ Supabase 불러오기 — 상태 표시 강화
+============================================================ */
+async function loadFromSupabase(){
+  const client=getSbClient();
+  if(!client){
+    setStatus('⚠️ Supabase 미설정','err',5000);
+    return;
+  }
+  setStatus('☁️ 불러오는 중...','ing');
+  $('btnLoad').disabled=true;
+  $('tagBox').innerHTML='';
+
+  const labelMap={site:'현장목록',ins:'실사목록',doc:'서류목록'};
+  let loaded=0, notFound=0, failed=0;
+
+  for(const storeKey of ['site','ins','doc']){
+    const fileName=FILE_MAP[storeKey];
+    const tag=document.createElement('div');
+    tag.className='tag ing';
+    tag.textContent=`⏳ ${labelMap[storeKey]} 불러오는 중...`;
+    $('tagBox').appendChild(tag);
+    try{
+      const{data,error}=await client.storage.from(_SB_BUCKET).download(fileName);
+      if(error) throw new Error(error.message);
+      const buf=await data.arrayBuffer();
+      const wb=XLSX.read(new Uint8Array(buf),{type:'array'});
+      STORE[storeKey]=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1});
+      loaded++;
+      tag.className='tag ok';
+      tag.textContent=`☁️ ${labelMap[storeKey]} 로드완료`;
+    }catch(e){
+      const isNotFound=e.message.includes('Object not found')||e.message.includes('404');
+      if(isNotFound){
+        notFound++;
+        tag.className='tag';
+        tag.textContent=`📭 ${labelMap[storeKey]} 미업로드`;
+      }else{
+        failed++;
+        tag.className='tag fail';
+        tag.textContent=`❌ ${labelMap[storeKey]} 실패: ${e.message}`;
+      }
+    }
+  }
+
+  // ── 최종 상태 메시지
+  const now=new Date().toLocaleString('ko-KR');
+  if(loaded>0){
+    $('sbLast').textContent=`마지막 동기화: ${now}`;
+    $('lastUpdated').textContent=`Supabase 동기화: ${now}`;
+  }
+
+  if(failed>0 && loaded===0){
+    setStatus(`❌ 전체 로드 실패 (${failed}개 오류)`,'err',8000);
+  }else if(failed>0){
+    setStatus(`⚠️ ${loaded}개 성공 / ${failed}개 실패`,'err',8000);
+  }else if(loaded===0 && notFound===3){
+    setStatus('📭 저장된 파일 없음 — 파일을 먼저 업로드하세요','err',6000);
+  }else if(notFound>0){
+    setStatus(`✅ ${loaded}개 로드 완료 (${notFound}개 미업로드)`,'ok',5000);
+  }else{
+    setStatus(`✅ ${loaded}개 전체 로드 완료`,'ok',4000);
+  }
+
+  if(loaded>0) renderAll();
+  $('btnLoad').disabled=false;
 }
 
 function readFileAsArrayBuffer(file){
