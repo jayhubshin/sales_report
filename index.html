@@ -674,13 +674,10 @@ function renderAll(){
   renderCompTable('siteTable', cS, pS, lbl);
   renderCompTable('insTable',  cI, pI, lbl);
   renderDocTable('docTable', cD, pD, cDQ, pDQ, lbl);
-  renderRouteTableFn(rSQ);
   renderBizTable(bSQ);
   drawCompChart('barSiteComp', cS, pS, lbl);
   drawCompChart('barInsComp',  cI, pI, lbl);
   drawCompChart('barDocComp',  cD, pD, lbl);
-  const rL = ROUTE_KEYS.filter(k=>rSQ[k]>0);
-  drawPieChart('pieRoute', rL.map(k=>ROUTE_LABELS[k]), rL.map(k=>rSQ[k]), rL.map(k=>ROUTE_COLORS[k]?.bar));
   const bL = Object.keys(bSQ).filter(k=>bSQ[k]>0).sort((a,b)=>bSQ[b]-bSQ[a]);
   drawPieChart('pieBiz', bL, bL.map(k=>bSQ[k]),
     ['#8b5cf6','#3b82f6','#10b981','#f59e0b','#ef4444','#ec4899','#14b8a6','#f97316']);
