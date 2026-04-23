@@ -629,7 +629,8 @@ function renderAll(){
   /* 계약 — B열(인덱스1): 업체명, J열(인덱스9): 계약여부, K열(인덱스10): 계약일, O열(인덱스14): 수량 */
   const cD={}, pD={}, aD={};
   const cDQ={}, aDQ={};
-  let tQ=0;
+  let tQ=0, tQP=0;  // ← tQP 추가
+
   const vRQ={}, rSQ={};
   const docListRows=[];
 
@@ -665,6 +666,11 @@ function renderAll(){
     if(d>=W.pre.s && d<=W.pre.e){
       pD[v]=(pD[v]||0)+1;
     }
+      // STORE.doc forEach 내 전주 구간에 수량 누적 추가
+    if(d>=W.pre.s && d<=W.pre.e){
+      pD[v]=(pD[v]||0)+1;
+      tQP+=q;  // ← 이 줄 추가
+    }
   });
 
   /* 집계 */
@@ -673,6 +679,7 @@ function renderAll(){
   const tIC=sum(cI), tIP=sum(pI);
   const tDC=sum(cD), tDP=sum(pD);
   const tQC=Math.round(tQ);
+  const tQPC=Math.round(tQP);  // ← 추가
 
   $('s-site').textContent = tSC;
   $('s-ins') .textContent = tIC;
@@ -687,7 +694,7 @@ function renderAll(){
     curDocQty:cDQ, accumDocQty:aDQ,
     vendorRouteAccumQty:vRQ
   });
-  drawOverviewChart(tSC,tSP,tIC,tIP,tDC,tDP,tQC,lbl);
+  drawOverviewChart(tSC,tSP,tIC,tIP,tDC,tDP,tQC,tQPC,lbl);  // ← tQPC 추가
   drawGoalChart(tSC,tIC,tDC,tQC);
   renderDocList(docListRows, lbl);
   renderCompTable('siteTable', cS, pS, lbl);
@@ -833,21 +840,22 @@ function drawPieChart(id, labels, data, colors){
     options:{maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}
   });
 }
-function drawOverviewChart(tSC,tSP,tIC,tIP,tDC,tDP,tQC,lbl){
+function drawOverviewChart(tSC,tSP,tIC,tIP,tDC,tDP,tQC,tQP,lbl){
   if(charts['barOverview']) charts['barOverview'].destroy();
   $('chartOverviewLabel').textContent=`${lbl.prev} 대비 ${lbl.cur} 실적 비교`;
   charts['barOverview']=new Chart($('barOverview'),{
     type:'bar',
     data:{
-      labels:['현장등록','현장실사','계약체결(건)'],
+      labels:['현장등록','현장실사','계약체결(건)','계약수량(기)'],
       datasets:[
-        {label:lbl.prev, data:[tSP,tIP,tDP], backgroundColor:'#cbd5e1', borderRadius:4},
-        {label:lbl.cur,  data:[tSC,tIC,tDC], backgroundColor:['#3b82f6','#10b981','#f59e0b'], borderRadius:4}
+        {label:lbl.prev, data:[tSP,tIP,tDP,tQP], backgroundColor:'#cbd5e1', borderRadius:4},
+        {label:lbl.cur,  data:[tSC,tIC,tDC,tQC], backgroundColor:['#3b82f6','#10b981','#f59e0b','#8b5cf6'], borderRadius:4}
       ]
     },
     options:{maintainAspectRatio:false,plugins:{legend:{position:'top'}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}
   });
 }
+
 function drawGoalChart(tSC,tIC,tDC,tQC){
   if(charts['barGoal']) charts['barGoal'].destroy();
 
@@ -864,12 +872,14 @@ function drawGoalChart(tSC,tIC,tDC,tQC){
   } else if(mode==='month'){
     const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
     const wInMonth   = Math.ceil((today - monthStart) / msPerWeek);
-    goalSite=GOAL_W_SITE*wInMonth; goalIns=GOAL_W_INS*wInMonth; goalDoc=GOAL_W_DOC*wInMonth; goalQty=GOAL_W_QTY*wInMonth;
+    goalSite=GOAL_W_SITE*wInMonth; goalIns=GOAL_W_INS*wInMonth;
+    goalDoc=GOAL_W_DOC*wInMonth;   goalQty=GOAL_W_QTY*wInMonth;
   } else if(mode==='quarter'){
-    const q = Math.floor(today.getMonth()/3);
+    const q      = Math.floor(today.getMonth()/3);
     const qStart = new Date(today.getFullYear(), q*3, 1);
     const wInQ   = Math.ceil((today - qStart) / msPerWeek);
-    goalSite=GOAL_W_SITE*wInQ; goalIns=GOAL_W_INS*wInQ; goalDoc=GOAL_W_DOC*wInQ; goalQty=GOAL_W_QTY*wInQ;
+    goalSite=GOAL_W_SITE*wInQ; goalIns=GOAL_W_INS*wInQ;
+    goalDoc=GOAL_W_DOC*wInQ;   goalQty=GOAL_W_QTY*wInQ;
   } else {
     goalSite=GOAL_W_SITE*elapsedWeeks; goalIns=GOAL_W_INS*elapsedWeeks;
     goalDoc=GOAL_W_DOC*elapsedWeeks;   goalQty=GOAL_W_QTY*elapsedWeeks;
@@ -878,8 +888,9 @@ function drawGoalChart(tSC,tIC,tDC,tQC){
   const goals   = [goalSite, goalIns, goalDoc, goalQty];
   const actuals = [tSC, tIC, tDC, tQC];
   const labels  = ['현장등록','현장실사','계약체결(건)','계약수량(기)'];
-  const pcts    = actuals.map((a,i)=>goals[i]?Math.round(a/goals[i]*100):0);
-  const colors  = pcts.map(p=>p>=100?'#10b981':p>=70?'#f59e0b':'#ef4444');
+
+  // 요약표 헤더 색상 기준으로 고정 색상 적용
+  const barColors = ['#1d4ed8','#065f46','#92400e','#4c1d95'];
 
   const weekLabel = mode==='week'   ? '주간 목표'
                   : mode==='month'  ? `${today.getMonth()+1}월 누적 목표`
@@ -887,13 +898,15 @@ function drawGoalChart(tSC,tIC,tDC,tQC){
                   : `${elapsedWeeks}주차 누적 목표`;
   $('chartGoalLabel').textContent=`목표 달성률 (${weekLabel} 기준)`;
 
+  const pcts = actuals.map((a,i)=>goals[i]?Math.round(a/goals[i]*100):0);
+
   charts['barGoal']=new Chart($('barGoal'),{
     type:'bar',
     data:{
       labels,
       datasets:[
         {label:'목표',  data:goals,   backgroundColor:'#e2e8f0', borderRadius:4},
-        {label:'실적',  data:actuals, backgroundColor:colors,    borderRadius:4}
+        {label:'실적',  data:actuals, backgroundColor:barColors, borderRadius:4}
       ]
     },
     options:{
@@ -906,6 +919,7 @@ function drawGoalChart(tSC,tIC,tDC,tQC){
     }
   });
 }
+
 
 /* ⑳ 계약체결 목록 */
 function renderDocList(rows, lbl){
