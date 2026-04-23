@@ -319,12 +319,16 @@ async function loadFiles(files){
     Object.keys(keyMap).forEach(k=>{if(f.name.includes(k)) latest[k]=f;});
   });
   if(!Object.keys(latest).length){
-    alert('현장목록/실사목록/서류목록 파일을 선택하세요.');
+    alert('현장목록/실사목록/서류목록 이름이 포함된 파일을 선택하세요.');
     return;
   }
   $('tagBox').innerHTML='';
-  const client = getSbClient();
-  const hasSb  = !!client;
+
+  // Supabase 클라이언트 — 없어도 로컬 파싱은 계속 진행
+  let client = null;
+  try{ client = getSbClient(); }catch(e){ client = null; }
+  const hasSb = !!client;
+
   if(hasSb) setStatus('⬆️ 업로드 중...','ing');
 
   for(const k in latest){
@@ -337,21 +341,30 @@ async function loadFiles(files){
       const buf=await readFileAsArrayBuffer(file);
       const wb=XLSX.read(new Uint8Array(buf),{type:'array'});
       STORE[storeKey]=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1});
+
+      // Supabase 저장은 실패해도 로컬 데이터는 유지
       if(hasSb){
-        await saveToSupabase(storeKey,buf);
-        tag.className='tag ok';tag.textContent=`✅ ${k} ☁️`;
+        try{
+          await saveToSupabase(storeKey,buf);
+          tag.className='tag ok';tag.textContent=`✅ ${k} ☁️`;
+        }catch(sbErr){
+          // Supabase 실패해도 로컬 파싱 결과는 살림
+          tag.className='tag ok';tag.textContent=`✅ ${k} (로컬만)`;
+          setStatus(`⚠️ 클라우드 저장 실패: ${sbErr.message}`,'err',6000);
+        }
       }else{
         tag.className='tag ok';tag.textContent=`✅ ${k}`;
       }
     }catch(e){
-      tag.className='tag fail';tag.textContent=`❌ ${k}`;
-      setStatus(`❌ ${e.message}`,'err',8000);
+      tag.className='tag fail';tag.textContent=`❌ ${k}: ${e.message}`;
     }
   }
+
   if(hasSb) setStatus('✅ Supabase 저장 완료','ok',4000);
   $('lastUpdated').textContent=`업데이트: ${new Date().toLocaleString('ko-KR')}`;
   renderAll();
 }
+
 
 function readFileAsArrayBuffer(file){
   return new Promise((res,rej)=>{
