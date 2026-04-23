@@ -264,19 +264,31 @@ function setStatus(msg,type,autoClear){
 }
 
 /* ⑤ Supabase 저장 */
-async function saveToSupabase(storeKey,arrayBuffer){
-  const client=getSbClient();
+async function saveToSupabase(storeKey, arrayBuffer){
+  const client = getSbClient();
   if(!client) throw new Error('Supabase 클라이언트 없음');
-  const fileName=FILE_MAP[storeKey];
-  const blob=new Blob([arrayBuffer],{
-    type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-  });
-  const{error}=await client.storage.from(_SB_BUCKET).upload(fileName,blob,{
-    contentType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    upsert:true
-  });
-  if(error) throw new Error(error.message);
+
+  const fileName = FILE_MAP[storeKey];
+
+  // 1단계 — 기존 파일 삭제 (upsert 대신 delete 후 upload)
+  await client.storage.from(_SB_BUCKET).remove([fileName]);
+
+  // 2단계 — 새 파일 업로드
+  const { data, error } = await client.storage
+    .from(_SB_BUCKET)
+    .upload(fileName, arrayBuffer, {
+      contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      upsert: true,
+      duplex: 'half'
+    });
+
+  if(error){
+    console.error('Supabase 저장 오류:', error);
+    throw new Error(error.message);
+  }
+  console.log('✅ 저장 성공:', fileName, data);
 }
+
 
 /* ⑥ Supabase 불러오기 — 단일 정의 */
 async function loadFromSupabase(){
@@ -380,25 +392,25 @@ async function loadFiles(files){
       STORE[storeKey]=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1});
       localOk++;
       if(hasSb){
-        tag.textContent=`⬆️ ${k} 저장 중...`;
-        try{
-          await saveToSupabase(storeKey,buf);
-          sbOk++;
-          tag.className='tag ok';
-          tag.textContent=`✅ ${k} ☁️ 저장완료`;
-        }catch(sbErr){
-          sbFail++;
-          tag.className='tag ok';
-          tag.textContent=`⚠️ ${k} (로컬만)`;
-          const errTag=document.createElement('div');
-          errTag.className='tag fail';
-          errTag.textContent=`☁️ ${k} 실패: ${sbErr.message}`;
-          $('tagBox').appendChild(errTag);
-        }
-      }else{
+      tag.textContent=`⬆️ ${k} 저장 중...`;
+      console.log('Supabase 저장 시도:', storeKey, '버퍼 크기:', buf.byteLength);
+      try{
+        await saveToSupabase(storeKey, buf);
+        sbOk++;
         tag.className='tag ok';
-        tag.textContent=`✅ ${k} (로컬)`;
+        tag.textContent=`✅ ${k} ☁️ 저장완료`;
+        console.log('✅ 저장 완료:', k);
+      }catch(sbErr){
+        sbFail++;
+        console.error('❌ 저장 실패:', k, sbErr.message);
+        tag.className='tag ok';
+        tag.textContent=`⚠️ ${k} (로컬만)`;
+        const errTag=document.createElement('div');
+        errTag.className='tag fail';
+        errTag.textContent=`☁️ ${k} 실패: ${sbErr.message}`;
+        $('tagBox').appendChild(errTag);
       }
+    }
     }catch(e){
       localFail++;
       tag.className='tag fail';
