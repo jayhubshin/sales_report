@@ -269,25 +269,29 @@ async function saveToSupabase(storeKey, arrayBuffer){
   if(!client) throw new Error('Supabase 클라이언트 없음');
 
   const fileName = FILE_MAP[storeKey];
+  console.log(`☁️ ${fileName} 저장 시작 — 크기: ${arrayBuffer.byteLength} bytes`);
 
-  // 1단계 — 기존 파일 삭제 (upsert 대신 delete 후 upload)
-  await client.storage.from(_SB_BUCKET).remove([fileName]);
+  // 기존 파일 먼저 삭제
+  const { error: delErr } = await client.storage
+    .from(_SB_BUCKET)
+    .remove([fileName]);
+  console.log(`🗑️ ${fileName} 삭제 결과:`, delErr ? delErr.message : '성공');
 
-  // 2단계 — 새 파일 업로드
+  // 새 파일 업로드
   const { data, error } = await client.storage
     .from(_SB_BUCKET)
     .upload(fileName, arrayBuffer, {
       contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      upsert: true,
-      duplex: 'half'
+      upsert: true
     });
 
   if(error){
-    console.error('Supabase 저장 오류:', error);
+    console.error(`❌ ${fileName} 업로드 실패:`, error.message);
     throw new Error(error.message);
   }
-  console.log('✅ 저장 성공:', fileName, data);
+  console.log(`✅ ${fileName} 업로드 성공:`, data);
 }
+
 
 
 /* ⑥ Supabase 불러오기 — 단일 정의 */
