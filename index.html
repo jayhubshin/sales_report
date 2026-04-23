@@ -147,8 +147,8 @@ body { background: var(--bg); color: var(--text); }
 <div class="ua">
   <div class="upload-box" onclick="$('fIn').click()">📁 파일 선택 (데이터 업데이트)</div>
   <!-- webkitdirectory 제거 → 개별 파일 다중 선택 가능 -->
-  <input type="file" id="fIn" multiple accept=".xlsx,.xls"
-    style="display:none" onchange="loadFiles(this.files)">
+  <input type="file" id="fIn" webkitdirectory directory multiple
+  style="display:none" onchange="loadFiles(this.files)">
   <div class="file-tags" id="tagBox"></div>
   <div class="last-updated" id="lastUpdated"></div>
 </div>
@@ -618,7 +618,7 @@ function renderAll(){
   /* 현장실사 — B열(인덱스1): 업체명, E열(인덱스4): 실사일 */
   const cI={}, pI={}, aI={};
   STORE.ins.slice(3).forEach(r=>{
-    const d = parseD(r[4]);   // ← 수정: r[8] → r[4]
+    const d = parseD(r[8]);   // ← 수정: r[8] → r[4]
     const v = String(r[1]||'미지정').trim();
     if(!d) return;
     if(d>=W.accum.s && d<=W.accum.e) aI[v]=(aI[v]||0)+1;
@@ -637,7 +637,7 @@ function renderAll(){
     if(!String(r[9]||'').includes('체결')) return;   // J열 체결 필터
     const d = parseD(r[10]);  // K열: 계약일
     if(!d) return;
-    const v   = String(r[1]||'미지정').trim();  // ← 수정: r[8] → r[1]
+    const v   = String(r[8]||'미지정').trim();  // ← 수정: r[8] → r[1]
     const q   = parseFloat(r[14])||0;
     const rt  = classifyRoute(r);
 
