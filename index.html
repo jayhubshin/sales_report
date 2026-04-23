@@ -317,9 +317,19 @@ async function loadFromSupabase(){
     tag.textContent=`⏳ ${label} 불러오는 중...`;
     $('tagBox').appendChild(tag);
     try{
-      const{data,error}=await client.storage.from(_SB_BUCKET).download(fileName);
-      if(error) throw new Error(error.message);
-      const buf=await data.arrayBuffer();
+      // ✅ 캐시 무력화 — 타임스탬프를 쿼리로 추가해서 항상 새 파일 요청
+      const ts = Date.now();
+      const { data: urlData } = client.storage
+        .from(_SB_BUCKET)
+        .getPublicUrl(`${fileName}?t=${ts}`);
+
+      const res = await fetch(`${urlData.publicUrl}`, {
+        cache: 'no-store',                          // 브라우저 캐시 완전 무시
+        headers: { 'Cache-Control': 'no-cache' }
+      });
+
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      const buf = await res.arrayBuffer();
       const wb=XLSX.read(new Uint8Array(buf),{type:'array'});
       const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1});
       STORE[storeKey]=rows;
@@ -337,7 +347,7 @@ async function loadFromSupabase(){
       }else{
         failed++;
         tag.className='tag fail';
-        tag.textContent=`❌ ${label} 실패`;
+        tag.textContent=`❌ ${label} 실패: ${e.message}`;
         results.push({type:'fail',label,msg:e.message});
       }
     }
