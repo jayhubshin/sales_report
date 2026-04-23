@@ -295,11 +295,20 @@ async function saveToSupabase(storeKey,arrayBuffer){
    ⑥ Supabase 불러오기
 ============================================================ */
 async function loadFromSupabase(){
+  console.log('▶ loadFromSupabase 시작');
+  console.log('_SB_URL:', _SB_URL);
+  console.log('_SB_KEY 길이:', _SB_KEY?.length);
+  console.log('_SB_BUCKET:', _SB_BUCKET);
+
   const client=getSbClient();
+  console.log('client:', client);
+
   if(!client){
+    console.warn('❌ client null — Supabase 미설정');
     setStatus('⚠️ Supabase 미설정','err',5000);
     return;
   }
+
   setStatus('☁️ 불러오는 중...','ing');
   $('btnLoad').disabled=true;
   $('tagBox').innerHTML='';
@@ -311,12 +320,17 @@ async function loadFromSupabase(){
   for(const storeKey of ['site','ins','doc']){
     const fileName=FILE_MAP[storeKey];
     const label=labelMap[storeKey];
+    console.log(`▶ ${label} 다운로드 시도: ${fileName}`);
+
     const tag=document.createElement('div');
     tag.className='tag ing';
     tag.textContent=`⏳ ${label} 불러오는 중...`;
     $('tagBox').appendChild(tag);
+
     try{
       const{data,error}=await client.storage.from(_SB_BUCKET).download(fileName);
+      console.log(`${label} 응답 — error:`, error, 'data:', data);
+
       if(error) throw new Error(error.message);
       const buf=await data.arrayBuffer();
       const wb=XLSX.read(new Uint8Array(buf),{type:'array'});
@@ -325,19 +339,21 @@ async function loadFromSupabase(){
       loaded++;
       tag.className='tag ok';
       tag.textContent=`☁️ ${label} 로드완료`;
-      results.push({type:'ok', label, rows: rows.length});
+      results.push({type:'ok',label,rows:rows.length});
+      console.log(`✅ ${label} 로드 완료 — ${rows.length}행`);
     }catch(e){
+      console.error(`❌ ${label} 오류:`, e.message);
       const isNotFound=e.message.includes('Object not found')||e.message.includes('404');
       if(isNotFound){
         notFound++;
         tag.className='tag';
         tag.textContent=`📭 ${label} 미업로드`;
-        results.push({type:'empty', label});
+        results.push({type:'empty',label});
       }else{
         failed++;
         tag.className='tag fail';
-        tag.textContent=`❌ ${label} 실패`;
-        results.push({type:'fail', label, msg: e.message});
+        tag.textContent=`❌ ${label} 실패: ${e.message}`;
+        results.push({type:'fail',label,msg:e.message});
       }
     }
   }
@@ -348,7 +364,7 @@ async function loadFromSupabase(){
     $('lastUpdated').textContent=`Supabase 동기화: ${now}`;
   }
 
-  if(failed>0 && loaded===0){
+  if(failed>0&&loaded===0){
     setStatus(`❌ 전체 로드 실패 (${failed}개 오류)`,'err',8000);
   }else if(failed>0){
     setStatus(`⚠️ ${loaded}개 성공 / ${failed}개 실패`,'err',8000);
@@ -360,8 +376,24 @@ async function loadFromSupabase(){
     setStatus(`✅ ${loaded}개 전체 로드 완료`,'ok',4000);
   }
 
-  // 결과 모달 표시
-  showResultModal(results, loaded, failed, notFound, now);
+  console.log('▶ showResultModal 호출 — loaded:', loaded, 'failed:', failed, 'notFound:', notFound);
+
+  // resultModal 존재 여부 확인
+  const modalEl = document.getElementById('resultModal');
+  console.log('resultModal 요소:', modalEl);
+
+  if(modalEl){
+    showResultModal(results, loaded, failed, notFound, now);
+  }else{
+    console.error('❌ resultModal 요소가 HTML에 없습니다. 모달 HTML을 추가하세요.');
+    // 모달 없으면 alert로 대체
+    const summary = results.map(r=>{
+      if(r.type==='ok')    return `✅ ${r.label} (${r.rows}행)`;
+      if(r.type==='empty') return `📭 ${r.label} (미업로드)`;
+      return `❌ ${r.label} (${r.msg})`;
+    }).join('\n');
+    alert(`불러오기 결과\n\n${summary}`);
+  }
 
   if(loaded>0) renderAll();
   $('btnLoad').disabled=false;
