@@ -24,7 +24,7 @@ body { background: var(--bg); color: var(--text); }
 
 .ua { padding: 15px 25px; background: var(--white); border-bottom: 1px solid var(--border); display: flex; gap: 15px; }
 .upload-box { flex: 1; border: 2px dashed #cbd5e1; border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; font-size: 13px; font-weight: 700; background: #fafafa; }
-.file-tags { flex: 3; display: flex; gap: 8px; flex-wrap: wrap; }
+.file-tags { flex: 3; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .tag { font-size: 11px; padding: 6px 10px; background: #f8fafc; border-radius: 5px; border: 1px solid var(--border); }
 
 .mn { padding: 20px; max-width: 1600px; margin: 0 auto; display: none; }
@@ -56,74 +56,58 @@ body { background: var(--bg); color: var(--text); }
 .tbl-wrap::-webkit-scrollbar { width: 6px; }
 .tbl-wrap::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
 
-/* ===================== 통합 실적 테이블 스타일 ===================== */
-.summary-table-wrap { overflow-x: auto; margin-top: 0; }
+/* ── 통합 요약 테이블 ── */
+.summary-table-wrap { overflow-x: auto; }
 .summary-tbl {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 12.5px;
-    min-width: 900px;
+    width: 100%; border-collapse: collapse; font-size: 12px; min-width: 1050px;
 }
 .summary-tbl th, .summary-tbl td {
-    border: 1px solid #cbd5e1;
-    text-align: center;
-    padding: 7px 10px;
-    white-space: nowrap;
+    border: 1px solid #cbd5e1; text-align: center; padding: 7px 10px; white-space: nowrap;
 }
-.summary-tbl thead tr:first-child th {
-    background: #1e40af;
-    color: #fff;
-    font-size: 13px;
-    font-weight: 700;
-    padding: 10px;
-}
-.summary-tbl thead tr:nth-child(2) th {
-    background: #dbeafe;
-    color: #1e3a8a;
-    font-size: 12px;
-    font-weight: 700;
-}
-.summary-tbl tbody tr td:first-child {
-    text-align: left;
-    font-weight: 700;
-    background: #f8fafc;
-    min-width: 120px;
-}
-.summary-tbl tbody tr.total-row td {
-    background: #eff6ff;
-    font-weight: 800;
-    color: #1e40af;
-}
+.summary-tbl thead tr:first-child th { color: #fff; font-size: 12px; font-weight: 700; padding: 9px 10px; }
+.th-name  { background: #1e293b !important; }
+.th-site  { background: #1d4ed8 !important; }
+.th-ins   { background: #065f46 !important; }
+.th-dcnt  { background: #92400e !important; }
+.th-dqty  { background: #4c1d95 !important; }
+.th-route { background: #0f4c81 !important; }
+.summary-tbl thead tr:nth-child(2) th { font-size: 11px; font-weight: 700; padding: 6px 8px; }
+.th2-site  { background: #bfdbfe !important; color: #1e3a8a !important; }
+.th2-ins   { background: #a7f3d0 !important; color: #065f46 !important; }
+.th2-dcnt  { background: #fde68a !important; color: #92400e !important; }
+.th2-dqty  { background: #ddd6fe !important; color: #4c1d95 !important; }
+.th2-route { background: #e0f2fe !important; color: #0f4c81 !important; }
+/* 인입경로 개별 컬러 */
+.th2-r1 { background: #dcfce7 !important; color: #166534 !important; }
+.th2-r2 { background: #fef9c3 !important; color: #854d0e !important; }
+.th2-r3 { background: #fce7f3 !important; color: #9d174d !important; }
+.th2-r4 { background: #fee2e2 !important; color: #991b1b !important; }
+.th2-r5 { background: #ede9fe !important; color: #5b21b6 !important; }
+
+.summary-tbl tbody td:first-child { text-align: left; font-weight: 700; background: #f8fafc; min-width: 130px; }
+.summary-tbl tbody tr.total-row td { background: #eff6ff !important; font-weight: 800; color: #1e40af; }
 .summary-tbl tbody tr:hover td { background: #f1f5f9; }
-.summary-tbl tbody tr.total-row:hover td { background: #dbeafe; }
-.summary-tbl td.zero { color: #94a3b8; }
-.summary-tbl td.highlight { color: #2563eb; font-weight: 700; }
-.summary-tbl td.bold-num { font-weight: 700; }
-/* 그룹 헤더 컬러 구분 */
-.th-site { background: #1d4ed8 !important; }
-.th-ins  { background: #065f46 !important; color:#fff !important; }
-.th-doc-cnt { background: #92400e !important; color:#fff !important; }
-.th-doc-qty { background: #4c1d95 !important; color:#fff !important; }
-.th-route { background: #1e3a8a !important; color:#fff !important; }
-.th2-site { background: #bfdbfe !important; color:#1e3a8a !important; }
-.th2-ins  { background: #a7f3d0 !important; color:#065f46 !important; }
-.th2-doc-cnt { background: #fde68a !important; color:#92400e !important; }
-.th2-doc-qty { background: #ddd6fe !important; color:#4c1d95 !important; }
-.th2-route { background: #bfdbfe !important; color:#1e3a8a !important; }
+.summary-tbl tbody tr.total-row:hover td { background: #dbeafe !important; }
+.zero { color: #d1d5db !important; font-size: 11px; }
+.hl { color: #2563eb; font-weight: 700; }
+
+/* 계약현황 탭 - 인입경로 차트 */
+.route-legend { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; justify-content: center; }
+.route-badge { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
 </style>
 </head>
 <body>
 
 <div class="hd">
     <h1>📊 EPC 주간/월간 통합 대시보드</h1>
-    <div id="clock" style="font-size: 12px; color: #94a3b8;"></div>
+    <div id="clock" style="font-size:12px; color:#94a3b8;"></div>
 </div>
 
 <div class="tab-bar">
-    <div class="tab on" onclick="chTab(0, this)">종합현황</div>
-    <div class="tab" onclick="chTab(1, this)">현장현황(신규)</div>
-    <div class="tab" onclick="chTab(2, this)">실사현황</div>
-    <div class="tab" onclick="chTab(3, this)">계약현황</div>
+    <div class="tab on" onclick="chTab(0,this)">종합현황</div>
+    <div class="tab" onclick="chTab(1,this)">현장현황(신규)</div>
+    <div class="tab" onclick="chTab(2,this)">실사현황</div>
+    <div class="tab" onclick="chTab(3,this)">계약현황</div>
 </div>
 
 <div class="ua">
@@ -134,86 +118,52 @@ body { background: var(--bg); color: var(--text); }
 
 <div class="pb">
     <div class="range-display" id="dateRange">기간 계산 중...</div>
-    <button class="pbtn on" onclick="setMode('week', this)">주간</button>
-    <button class="pbtn" onclick="setMode('month', this)">월간</button>
-    <button class="pbtn" onclick="setMode('quarter', this)">분기</button>
-    <button class="pbtn" onclick="setMode('year', this)">연간</button>
-    <input type="date" id="baseDate" style="padding:5px; border:1px solid var(--border); border-radius:6px;" onchange="renderAll()">
+    <button class="pbtn on" onclick="setMode('week',this)">주간</button>
+    <button class="pbtn" onclick="setMode('month',this)">월간</button>
+    <button class="pbtn" onclick="setMode('quarter',this)">분기</button>
+    <button class="pbtn" onclick="setMode('year',this)">연간</button>
+    <input type="date" id="baseDate" style="padding:5px;border:1px solid var(--border);border-radius:6px;" onchange="renderAll()">
 </div>
 
-<!-- ============================================================ -->
-<!-- 종합현황 -->
-<!-- ============================================================ -->
+<!-- ══════════════ 종합현황 ══════════════ -->
 <div id="mn-0" class="mn on">
-
-    <!-- KPI 카드 -->
     <div class="g-4">
         <div class="kpi-card">
-            <h3>현장등록 (금주)</h3>
-            <div class="val" id="s-site">0</div>
-            <div class="sub">건</div>
+            <h3 id="kpi-site-label">현장등록 (금주)</h3>
+            <div class="val" id="s-site">0</div><div class="sub">건</div>
         </div>
         <div class="kpi-card green">
-            <h3>실사완료 (금주)</h3>
-            <div class="val" id="s-ins">0</div>
-            <div class="sub">건</div>
+            <h3 id="kpi-ins-label">실사완료 (금주)</h3>
+            <div class="val" id="s-ins">0</div><div class="sub">건</div>
         </div>
         <div class="kpi-card orange">
-            <h3>계약체결 (금주)</h3>
-            <div class="val" id="s-doc">0</div>
-            <div class="sub">건</div>
+            <h3 id="kpi-doc-label">계약체결 (금주)</h3>
+            <div class="val" id="s-doc">0</div><div class="sub">건</div>
         </div>
         <div class="kpi-card purple">
-            <h3>계약수량 합계 (금주)</h3>
-            <div class="val" id="s-qty">0</div>
-            <div class="sub">kW</div>
+            <h3 id="kpi-qty-label">계약수량 (금주)</h3>
+            <div class="val" id="s-qty">0</div><div class="sub">kW</div>
         </div>
     </div>
 
-    <!-- ★ 통합 실적 요약 테이블 ★ -->
     <div class="cd" style="margin-bottom:20px;">
-        <h3>업체별 통합 실적 요약표</h3>
+        <h3 id="summaryTitle">업체별 통합 실적 요약표</h3>
         <div class="summary-table-wrap">
             <table class="summary-tbl" id="summaryTable">
-                <thead>
-                    <tr>
-                        <th rowspan="2" style="background:#1e293b; min-width:120px;">영업업체명</th>
-                        <th colspan="2" class="th-site">현장등록</th>
-                        <th colspan="2" class="th-ins">현장실사</th>
-                        <th colspan="2" class="th-doc-cnt">계약완료(건)</th>
-                        <th colspan="2" class="th-doc-qty">계약완료(기)</th>
-                        <th colspan="5" class="th-route">인입경로 (누적)</th>
-                    </tr>
-                    <tr>
-                        <th class="th2-site">금주</th>
-                        <th class="th2-site">누적</th>
-                        <th class="th2-ins">금주</th>
-                        <th class="th2-ins">누적</th>
-                        <th class="th2-doc-cnt">금주</th>
-                        <th class="th2-doc-cnt">누적</th>
-                        <th class="th2-doc-qty">금주</th>
-                        <th class="th2-doc-qty">누적</th>
-                        <th class="th2-route">신규</th>
-                        <th class="th2-route">추가</th>
-                        <th class="th2-route">자사</th>
-                        <th class="th2-route">타사</th>
-                        <th class="th2-route">투자</th>
-                    </tr>
-                </thead>
+                <thead id="summaryHead"></thead>
                 <tbody id="summaryTbody">
-                    <tr><td colspan="14" style="text-align:center; color:#94a3b8; padding:20px;">데이터를 업로드하면 자동으로 집계됩니다.</td></tr>
+                    <tr><td colspan="15" style="text-align:center;color:#94a3b8;padding:24px;">
+                        데이터를 업로드하면 자동으로 집계됩니다.
+                    </td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
-    <!-- 파이 차트 -->
     <div class="cd"><h3>성과 통합 비중</h3><div class="chart-h"><canvas id="pieAll"></canvas></div></div>
 </div>
 
-<!-- ============================================================ -->
-<!-- 현장현황 -->
-<!-- ============================================================ -->
+<!-- ══════════════ 현장현황 ══════════════ -->
 <div id="mn-1" class="mn">
     <div class="g-stat">
         <div class="cd">
@@ -224,7 +174,7 @@ body { background: var(--bg); color: var(--text); }
             <h3>현장등록 증감 리스트</h3>
             <div class="tbl-wrap">
                 <table class="tbl" id="siteTable">
-                    <thead><tr><th>영업업체명(B)</th><th>이전 실적</th><th>현재 실적</th><th>증감</th></tr></thead>
+                    <thead><tr><th>영업업체명</th><th>이전 실적</th><th>현재 실적</th><th>증감</th></tr></thead>
                     <tbody></tbody>
                 </table>
             </div>
@@ -238,16 +188,14 @@ body { background: var(--bg); color: var(--text); }
         <div class="cd">
             <h3>인입경로 요약</h3>
             <table class="tbl" id="pathTable">
-                <thead><tr><th>인입경로(F)</th><th>건수</th><th>비중</th></tr></thead>
+                <thead><tr><th>인입경로</th><th>건수</th><th>비중</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
     </div>
 </div>
 
-<!-- ============================================================ -->
-<!-- 실사현황 -->
-<!-- ============================================================ -->
+<!-- ══════════════ 실사현황 ══════════════ -->
 <div id="mn-2" class="mn">
     <div class="g-stat">
         <div class="cd">
@@ -258,7 +206,7 @@ body { background: var(--bg); color: var(--text); }
             <h3>실사완료 증감 리스트</h3>
             <div class="tbl-wrap">
                 <table class="tbl" id="insTable">
-                    <thead><tr><th>영업업체명(B)</th><th>이전 실적</th><th>현재 실적</th><th>증감</th></tr></thead>
+                    <thead><tr><th>영업업체명</th><th>이전 실적</th><th>현재 실적</th><th>증감</th></tr></thead>
                     <tbody></tbody>
                 </table>
             </div>
@@ -266,9 +214,7 @@ body { background: var(--bg); color: var(--text); }
     </div>
 </div>
 
-<!-- ============================================================ -->
-<!-- 계약현황 -->
-<!-- ============================================================ -->
+<!-- ══════════════ 계약현황 ══════════════ -->
 <div id="mn-3" class="mn">
     <div class="g-stat">
         <div class="cd">
@@ -279,28 +225,83 @@ body { background: var(--bg); color: var(--text); }
             <h3>계약체결 증감 리스트</h3>
             <div class="tbl-wrap">
                 <table class="tbl" id="docTable">
-                    <thead><tr><th>영업업체명(I)</th><th>이전 실적</th><th>현재 실적</th><th>증감</th><th>계약수량</th></tr></thead>
+                    <thead><tr>
+                        <th>영업업체명</th><th>이전 실적</th><th>현재 실적</th><th>증감</th><th>계약수량</th>
+                    </tr></thead>
                     <tbody></tbody>
                 </table>
             </div>
         </div>
     </div>
+    <!-- 계약현황 탭 인입경로 분포 -->
+    <div class="g-stat">
+        <div class="cd">
+            <h3>계약 인입경로 분포 (현재기간)</h3>
+            <div class="chart-s"><canvas id="pieRoute"></canvas></div>
+        </div>
+        <div class="cd">
+            <h3>계약 인입경로 요약</h3>
+            <table class="tbl" id="routeTable">
+                <thead><tr><th>인입경로</th><th>건수</th><th>비중</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
 <script>
-/* =====================================================================
-   전역 변수 / 유틸
-===================================================================== */
+/* ============================================================
+   전역
+============================================================ */
 let STORE = { site: [], ins: [], doc: [] };
 let mode = 'week';
 let charts = {};
 const $ = id => document.getElementById(id);
 
-$('baseDate').value = new Date().toISOString().slice(0, 10);
+$('baseDate').value = new Date().toISOString().slice(0,10);
 
-/* =====================================================================
-   탭 / 모드 전환
-===================================================================== */
+/**
+ * 인입경로 키 정의
+ * 순서: 신규계약 / 추가계약 / 자사교체 / 타사교체 / 투자설치
+ */
+const ROUTE_KEYS  = ['신규계약', '추가계약', '자사교체', '타사교체', '투자설치'];
+const ROUTE_COLORS = {
+    '신규계약': { bg:'#dcfce7', color:'#166534', bar:'#22c55e' },
+    '추가계약': { bg:'#fef9c3', color:'#854d0e', bar:'#eab308' },
+    '자사교체': { bg:'#fce7f3', color:'#9d174d', bar:'#ec4899' },
+    '타사교체': { bg:'#fee2e2', color:'#991b1b', bar:'#ef4444' },
+    '투자설치': { bg:'#ede9fe', color:'#5b21b6', bar:'#8b5cf6' },
+};
+
+const MODE_LABEL = {
+    week:    { cur:'금주',   accum:'연간누적', prev:'전주' },
+    month:   { cur:'금월',   accum:'연간누적', prev:'전월' },
+    quarter: { cur:'금분기', accum:'연간누적', prev:'전분기' },
+    year:    { cur:'금년',   accum:'전년',     prev:'전년' },
+};
+
+/* ============================================================
+   인입경로 분류 함수
+   - N열(13): 사업구분-2  → '투자설치' 포함 시 → '투자설치'
+   - L열(11): 계약구분    → 신규계약 / 추가계약 / 자사교체 / 타사교체
+============================================================ */
+function classifyRoute(row) {
+    const bizType2  = String(row[13] || '').trim(); // N열: 사업구분-2
+    const contractType = String(row[11] || '').trim(); // L열: 계약구분
+
+    if (bizType2.includes('투자설치')) return '투자설치';
+
+    if (contractType.includes('신규')) return '신규계약';
+    if (contractType.includes('추가')) return '추가계약';
+    if (contractType.includes('자사')) return '자사교체';
+    if (contractType.includes('타사')) return '타사교체';
+
+    return '기타'; // 분류 불가 시
+}
+
+/* ============================================================
+   탭 / 모드
+============================================================ */
 function chTab(i, el) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
     document.querySelectorAll('.mn').forEach(m => m.classList.remove('on'));
@@ -308,7 +309,6 @@ function chTab(i, el) {
     $(`mn-${i}`).classList.add('on');
     renderAll();
 }
-
 function setMode(m, el) {
     mode = m;
     document.querySelectorAll('.pbtn').forEach(b => b.classList.remove('on'));
@@ -316,63 +316,73 @@ function setMode(m, el) {
     renderAll();
 }
 
-/* =====================================================================
-   날짜 파싱 & 범위 계산
-===================================================================== */
+/* ============================================================
+   날짜 유틸
+============================================================ */
 function parseD(v) {
     if (!v) return null;
     if (v instanceof Date) return v;
     if (typeof v === 'number') return new Date((v - 25569) * 86400000);
-    const d = new Date(String(v).replace(/\./g, '-'));
+    const d = new Date(String(v).replace(/\./g,'-'));
     return isNaN(d) ? null : d;
 }
 
 function getRanges() {
     const base = new Date($('baseDate').value);
-    let curS, curE, preS, preE;
+    let curS, curE, preS, preE, accumS, accumE, yearLabel;
 
     if (mode === 'week') {
         const day = base.getDay();
-        let diff = day >= 5 ? day - 5 : day + 2;
-        let tFri = new Date(base); tFri.setDate(base.getDate() - diff);
-        curS = new Date(tFri); curS.setDate(tFri.getDate() - 7);
-        curE = new Date(curS); curE.setDate(curS.getDate() + 6);
+        const diffToFri = day >= 5 ? day - 5 : day + 2;
+        const tFri = new Date(base); tFri.setDate(base.getDate() - diffToFri);
+        curS = new Date(tFri); curS.setDate(tFri.getDate() - 6);
+        curE = new Date(tFri);
         preS = new Date(curS); preS.setDate(curS.getDate() - 7);
-        preE = new Date(preS); preE.setDate(preS.getDate() + 6);
+        preE = new Date(curE); preE.setDate(curE.getDate() - 7);
+        accumS = new Date(curE.getFullYear(), 0, 1);
+        accumE = new Date(curE);
+        yearLabel = String(curE.getFullYear());
     } else if (mode === 'month') {
         curS = new Date(base.getFullYear(), base.getMonth(), 1);
         curE = new Date(base.getFullYear(), base.getMonth() + 1, 0);
         preS = new Date(base.getFullYear(), base.getMonth() - 1, 1);
         preE = new Date(base.getFullYear(), base.getMonth(), 0);
+        accumS = new Date(base.getFullYear(), 0, 1);
+        accumE = new Date(curE);
+        yearLabel = String(base.getFullYear());
     } else if (mode === 'quarter') {
         const q = Math.floor(base.getMonth() / 3);
         curS = new Date(base.getFullYear(), q * 3, 1);
         curE = new Date(base.getFullYear(), (q + 1) * 3, 0);
         preS = new Date(base.getFullYear(), (q - 1) * 3, 1);
         preE = new Date(base.getFullYear(), q * 3, 0);
+        accumS = new Date(base.getFullYear(), 0, 1);
+        accumE = new Date(curE);
+        yearLabel = String(base.getFullYear());
     } else {
         curS = new Date(base.getFullYear(), 0, 1);
         curE = new Date(base.getFullYear(), 11, 31);
         preS = new Date(base.getFullYear() - 1, 0, 1);
         preE = new Date(base.getFullYear() - 1, 11, 31);
+        accumS = new Date(base.getFullYear() - 1, 0, 1);
+        accumE = new Date(base.getFullYear() - 1, 11, 31);
+        yearLabel = String(base.getFullYear() - 1);
     }
 
-    curS.setHours(0, 0, 0, 0); curE.setHours(23, 59, 59, 999);
-    preS.setHours(0, 0, 0, 0); preE.setHours(23, 59, 59, 999);
-    const f = d => d.toISOString().slice(0, 10);
+    [curS, preS, accumS].forEach(d => d.setHours(0,0,0,0));
+    [curE, preE, accumE].forEach(d => d.setHours(23,59,59,999));
+
+    const f = d => d.toISOString().slice(0,10);
     $('dateRange').textContent = `${f(curS)} ~ ${f(curE)}`;
 
-    // 누적 범위: 데이터 전체 (시작일 ~ curE)
-    const accumE = curE;
-
-    return { cur: { s: curS, e: curE }, pre: { s: preS, e: preE }, accumE };
+    return { cur:{s:curS,e:curE}, pre:{s:preS,e:preE}, accum:{s:accumS,e:accumE}, yearLabel };
 }
 
-/* =====================================================================
+/* ============================================================
    파일 로드
-===================================================================== */
+============================================================ */
 async function loadFiles(files) {
-    const map = { '현장목록': 'site', '실사목록': 'ins', '서류목록': 'doc' };
+    const map = { '현장목록':'site', '실사목록':'ins', '서류목록':'doc' };
     const latest = {};
     Array.from(files).forEach(f => {
         Object.keys(map).forEach(k => { if (f.name.includes(k)) latest[k] = f; });
@@ -387,287 +397,325 @@ async function loadFiles(files) {
     }
     renderAll();
 }
-
 function readExcel(file, key) {
     return new Promise(res => {
         const reader = new FileReader();
         reader.onload = e => {
-            const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
-            STORE[key] = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 });
+            const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+            STORE[key] = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1});
             res();
         };
         reader.readAsArrayBuffer(file);
     });
 }
 
-/* =====================================================================
+/* ============================================================
    메인 렌더링
-===================================================================== */
+============================================================ */
 function renderAll() {
-    const W = getRanges();
+    const W   = getRanges();
+    const lbl = MODE_LABEL[mode];
 
-    /* ── 현장 분석 ── */
-    // B열(1): 업체, F열(5): 인입경로, I열(8): 등록일
-    let curSite = {}, preSite = {}, accumSite = {};
-    let pathsCur = {}, pathsAccum = {};
-    // 인입경로 종류 (신규/추가/자사/타사/투자)
-    const ROUTE_KEYS = ['신규', '추가', '자사', '타사', '투자'];
-    // 업체별 인입경로 누적
-    let vendorRouteAccum = {}; // { vendor: { 신규:0, 추가:0, ... } }
+    /* KPI 라벨 */
+    $('kpi-site-label').textContent = `현장등록 (${lbl.cur})`;
+    $('kpi-ins-label').textContent  = `실사완료 (${lbl.cur})`;
+    $('kpi-doc-label').textContent  = `계약체결 (${lbl.cur})`;
+    $('kpi-qty-label').textContent  = `계약수량 (${lbl.cur})`;
+
+    /* ── 현장 집계 ── B(1):업체 / I(8):등록일 */
+    let curSite={}, preSite={};
 
     STORE.site.slice(3).forEach(row => {
         const d = parseD(row[8]);
-        const v = String(row[1] || '미지정').trim();
-        const p = String(row[5] || '기타').trim();
+        const v = String(row[1]||'미지정').trim();
         if (!d) return;
-
-        // 누적 (전체 ~ curE)
-        if (d <= W.accumE) {
-            accumSite[v] = (accumSite[v] || 0) + 1;
-            pathsAccum[p] = (pathsAccum[p] || 0) + 1;
-            if (!vendorRouteAccum[v]) vendorRouteAccum[v] = {};
-            vendorRouteAccum[v][p] = (vendorRouteAccum[v][p] || 0) + 1;
-        }
-
-        if (d >= W.cur.s && d <= W.cur.e) {
-            curSite[v] = (curSite[v] || 0) + 1;
-            pathsCur[p] = (pathsCur[p] || 0) + 1;
-        } else if (d >= W.pre.s && d <= W.pre.e) {
-            preSite[v] = (preSite[v] || 0) + 1;
-        }
+        if (d >= W.cur.s && d <= W.cur.e)      curSite[v] = (curSite[v]||0) + 1;
+        else if (d >= W.pre.s && d <= W.pre.e) preSite[v] = (preSite[v]||0) + 1;
     });
 
-    /* ── 실사 분석 ── */
-    // B열(1): 업체, I열(8): 실사일
-    let curIns = {}, preIns = {}, accumIns = {};
+    /* ── 실사 집계 ── B(1):업체 / I(8):실사일 */
+    let curIns={}, preIns={};
+
     STORE.ins.slice(3).forEach(row => {
         const d = parseD(row[8]);
-        const v = String(row[1] || '미지정').trim();
+        const v = String(row[1]||'미지정').trim();
         if (!d) return;
-        if (d <= W.accumE) accumIns[v] = (accumIns[v] || 0) + 1;
-        if (d >= W.cur.s && d <= W.cur.e) curIns[v] = (curIns[v] || 0) + 1;
-        else if (d >= W.pre.s && d <= W.pre.e) preIns[v] = (preIns[v] || 0) + 1;
+        if (d >= W.cur.s && d <= W.cur.e)      curIns[v] = (curIns[v]||0) + 1;
+        else if (d >= W.pre.s && d <= W.pre.e) preIns[v] = (preIns[v]||0) + 1;
     });
 
-    /* ── 계약(서류) 분석 ── */
-    // I열(8): 업체, J열(9): 계약여부, K열(10): 계약일, O열(14): 계약수량(건)
-    // 계약수량(기): kW 값 → P열(15) 또는 O열(14) 확인 필요. 여기서는 건=카운트, 기=qty(O열)로 구분
-    let curDoc = {}, preDoc = {}, accumDoc = {};
-    let curDocQty = {}, accumDocQty = {};
+    /* ── 계약 집계 ──
+       I(8):업체 / J(9):계약여부 / K(10):계약일
+       L(11):계약구분 / N(13):사업구분-2 / O(14):계약수량(kW)
+    ── */
+    let curDoc={},  preDoc={},  accumDoc={};
+    let curDocQty={}, accumDocQty={};
     let totalQty = 0;
 
+    // 인입경로별 집계: cur / accum
+    // { vendor: { '신규계약':0, '추가계약':0, ... } }
+    let vendorRouteCur   = {};
+    let vendorRouteAccum = {};
+    // 전체 인입경로 cur 합산 (계약현황 탭 차트용)
+    let routeSumCur   = {};
+    let routeSumAccum = {};
+
     STORE.doc.slice(3).forEach(row => {
-        const status = String(row[9] || '').trim();
-        if (!status.includes('체결')) return;
+        if (!String(row[9]||'').includes('체결')) return;
         const d = parseD(row[10]);
         if (!d) return;
-        const v = String(row[8] || '미지정').trim();
-        const qty = parseFloat(row[14]) || 0;
+        const v     = String(row[8]||'미지정').trim();
+        const qty   = parseFloat(row[14]) || 0;
+        const route = classifyRoute(row); // ← 핵심 분류 함수
 
-        if (d <= W.accumE) {
-            accumDoc[v] = (accumDoc[v] || 0) + 1;
-            accumDocQty[v] = (accumDocQty[v] || 0) + qty;
+        /* 누적 집계 */
+        if (d >= W.accum.s && d <= W.accum.e) {
+            accumDoc[v]    = (accumDoc[v]||0)    + 1;
+            accumDocQty[v] = (accumDocQty[v]||0) + qty;
+            if (!vendorRouteAccum[v]) vendorRouteAccum[v] = {};
+            vendorRouteAccum[v][route] = (vendorRouteAccum[v][route]||0) + 1;
+            routeSumAccum[route] = (routeSumAccum[route]||0) + 1;
         }
+
+        /* 현재 기간 집계 */
         if (d >= W.cur.s && d <= W.cur.e) {
-            curDoc[v] = (curDoc[v] || 0) + 1;
-            curDocQty[v] = (curDocQty[v] || 0) + qty;
-            totalQty += qty;
+            curDoc[v]    = (curDoc[v]||0)    + 1;
+            curDocQty[v] = (curDocQty[v]||0) + qty;
+            totalQty    += qty;
+            if (!vendorRouteCur[v]) vendorRouteCur[v] = {};
+            vendorRouteCur[v][route] = (vendorRouteCur[v][route]||0) + 1;
+            routeSumCur[route] = (routeSumCur[route]||0) + 1;
         } else if (d >= W.pre.s && d <= W.pre.e) {
-            preDoc[v] = (preDoc[v] || 0) + 1;
+            preDoc[v] = (preDoc[v]||0) + 1;
         }
     });
 
-    /* ── KPI 카드 업데이트 ── */
-    const sumVal = obj => Object.values(obj).reduce((a, b) => a + b, 0);
-    $('s-site').textContent = sumVal(curSite);
-    $('s-ins').textContent = sumVal(curIns);
-    $('s-doc').textContent = sumVal(curDoc);
-    $('s-qty').textContent = totalQty.toLocaleString();
+    /* KPI 카드 */
+    const sum = o => Object.values(o).reduce((a,b)=>a+b,0);
+    $('s-site').textContent = sum(curSite);
+    $('s-ins').textContent  = sum(curIns);
+    $('s-doc').textContent  = sum(curDoc);
+    $('s-qty').textContent  = totalQty.toLocaleString();
 
-    /* ── 통합 요약 테이블 렌더링 ── */
+    /* 통합 요약 테이블 */
     renderSummaryTable({
-        curSite, accumSite,
-        curIns, accumIns,
-        curDoc, accumDoc,
-        curDocQty, accumDocQty,
-        vendorRouteAccum,
-        ROUTE_KEYS
+        lbl, W,
+        curSite,   curIns,  curDoc,  curDocQty,
+        accumDoc,  accumDocQty,
+        vendorRouteCur, vendorRouteAccum
     });
 
-    /* ── 기존 개별 탭 테이블/차트 ── */
-    renderCompTable('siteTable', curSite, preSite);
-    renderCompTable('insTable', curIns, preIns);
-    renderDocTable('docTable', curDoc, preDoc, curDocQty);
-    renderPathTable(pathsCur);
+    /* 탭별 */
+    renderCompTable('siteTable', curSite, preSite, lbl);
+    renderCompTable('insTable',  curIns,  preIns,  lbl);
+    renderDocTable('docTable',   curDoc,  preDoc,  curDocQty, lbl);
+    renderRouteTable(routeSumCur);
 
-    drawCompChart('barSiteComp', curSite, preSite);
-    drawCompChart('barInsComp', curIns, preIns);
-    drawCompChart('barDocComp', curDoc, preDoc);
-    drawPieChart('piePath', Object.keys(pathsCur), Object.values(pathsCur));
+    drawCompChart('barSiteComp', curSite, preSite, lbl);
+    drawCompChart('barInsComp',  curIns,  preIns,  lbl);
+    drawCompChart('barDocComp',  curDoc,  preDoc,  lbl);
+    drawPieChart('pieRoute',
+        ROUTE_KEYS.filter(k => routeSumCur[k] > 0),
+        ROUTE_KEYS.filter(k => routeSumCur[k] > 0).map(k => routeSumCur[k]),
+        ROUTE_KEYS.filter(k => routeSumCur[k] > 0).map(k => ROUTE_COLORS[k]?.bar || '#94a3b8')
+    );
     drawPieChart('pieAll',
-        ['현장등록', '실사완료', '계약체결'],
-        [sumVal(curSite), sumVal(curIns), sumVal(curDoc)]
+        ['현장등록','실사완료','계약체결'],
+        [sum(curSite), sum(curIns), sum(curDoc)],
+        ['#3b82f6','#10b981','#f59e0b']
     );
 }
 
-/* =====================================================================
-   통합 요약 테이블 렌더링 (핵심 신규 기능)
-===================================================================== */
-function renderSummaryTable({ curSite, accumSite, curIns, accumIns,
-    curDoc, accumDoc, curDocQty, accumDocQty,
-    vendorRouteAccum, ROUTE_KEYS }) {
+/* ============================================================
+   통합 요약 테이블 렌더링
+============================================================ */
+function renderSummaryTable({ lbl, W,
+    curSite, curIns, curDoc, curDocQty,
+    accumDoc, accumDocQty,
+    vendorRouteCur, vendorRouteAccum }) {
+
+    const accumLabel = mode === 'year'
+        ? `전년(${W.yearLabel})`
+        : `${W.yearLabel}년 누적`;
+
+    /* ── 동적 헤더 ── */
+    $('summaryHead').innerHTML = `
+    <tr>
+      <th class="th-name" rowspan="2" style="min-width:130px;">영업업체명</th>
+      <th class="th-site"  colspan="1">현장등록</th>
+      <th class="th-ins"   colspan="1">현장실사</th>
+      <th class="th-dcnt"  colspan="2">계약완료(건)</th>
+      <th class="th-dqty"  colspan="2">계약완료(기)</th>
+      <th class="th-route" colspan="5">계약 인입경로 (${accumLabel})</th>
+    </tr>
+    <tr>
+      <th class="th2-site">${lbl.cur}</th>
+      <th class="th2-ins">${lbl.cur}</th>
+      <th class="th2-dcnt">${lbl.cur}</th>
+      <th class="th2-dcnt">${accumLabel}</th>
+      <th class="th2-dqty">${lbl.cur}</th>
+      <th class="th2-dqty">${accumLabel}</th>
+      <th class="th2-r1">신규계약</th>
+      <th class="th2-r2">추가계약</th>
+      <th class="th2-r3">자사교체</th>
+      <th class="th2-r4">타사교체</th>
+      <th class="th2-r5">투자설치</th>
+    </tr>`;
 
     const tbody = $('summaryTbody');
     tbody.innerHTML = '';
 
-    // 전체 업체 목록 수집 (모든 데이터소스 합산)
+    /* 전체 업체 수집 */
     const allVendors = Array.from(new Set([
-        ...Object.keys(accumSite),
-        ...Object.keys(accumIns),
-        ...Object.keys(accumDoc)
-    ])).sort((a, b) => (accumSite[b] || 0) - (accumSite[a] || 0));
+        ...Object.keys(curSite),
+        ...Object.keys(curIns),
+        ...Object.keys(accumDoc),
+        ...Object.keys(curDoc)
+    ])).sort((a,b) => (accumDoc[b]||0) - (accumDoc[a]||0));
 
-    // 합계 행 계산
-    const sumVal = obj => Object.values(obj).reduce((a, b) => a + b, 0);
+    /* 합계 계산 */
+    const sum = o => Object.values(o).reduce((a,b)=>a+b,0);
+    const routeTotalCur   = {};
     const routeTotalAccum = {};
     ROUTE_KEYS.forEach(k => {
-        routeTotalAccum[k] = Object.values(vendorRouteAccum).reduce((s, r) => s + (r[k] || 0), 0);
+        routeTotalCur[k]   = Object.values(vendorRouteCur).reduce((s,r)=>s+(r[k]||0), 0);
+        routeTotalAccum[k] = Object.values(vendorRouteAccum).reduce((s,r)=>s+(r[k]||0), 0);
     });
 
-    // 합계 행 먼저 삽입
+    /* 합계 행 */
     const totalTr = document.createElement('tr');
     totalTr.className = 'total-row';
-    totalTr.innerHTML = buildSummaryRow(
+    totalTr.innerHTML = buildRow(
         '합계',
-        sumVal(curSite), sumVal(accumSite),
-        sumVal(curIns), sumVal(accumIns),
-        sumVal(curDoc), sumVal(accumDoc),
-        sumVal(curDocQty), sumVal(accumDocQty),
-        routeTotalAccum, ROUTE_KEYS, true
+        sum(curSite), sum(curIns),
+        sum(curDoc),  sum(accumDoc),
+        sum(curDocQty), sum(accumDocQty),
+        routeTotalAccum, true
     );
     tbody.appendChild(totalTr);
 
-    // 업체별 행
+    /* 업체별 행 */
     allVendors.forEach(v => {
-        const routes = vendorRouteAccum[v] || {};
         const tr = document.createElement('tr');
-        tr.innerHTML = buildSummaryRow(
+        tr.innerHTML = buildRow(
             v,
-            curSite[v] || 0, accumSite[v] || 0,
-            curIns[v] || 0, accumIns[v] || 0,
-            curDoc[v] || 0, accumDoc[v] || 0,
-            curDocQty[v] || 0, accumDocQty[v] || 0,
-            routes, ROUTE_KEYS, false
+            curSite[v]||0,   curIns[v]||0,
+            curDoc[v]||0,    accumDoc[v]||0,
+            curDocQty[v]||0, accumDocQty[v]||0,
+            vendorRouteAccum[v]||{}, false
         );
         tbody.appendChild(tr);
     });
 }
 
-function buildSummaryRow(name,
-    cS, aS, cI, aI, cD, aD, cDQ, aDQ,
-    routes, ROUTE_KEYS, isTotal) {
-
-    const fmt = (v, isQty = false) => {
-        if (v === 0) return `<td class="zero">-</td>`;
-        const disp = isQty ? v.toLocaleString() : v.toLocaleString();
-        return `<td class="${isTotal ? 'bold-num highlight' : 'bold-num'}">${disp}</td>`;
+function buildRow(name, cS, cI, cD, aD, cDQ, aDQ, routeAccum, isTotal) {
+    const cell = (v, isQty=false) => {
+        if (v === 0 || v === null || v === undefined) return `<td class="zero">-</td>`;
+        const txt = isQty ? Number(v).toLocaleString() : Number(v).toLocaleString();
+        return `<td class="${isTotal ? 'hl' : ''}">${txt}</td>`;
     };
-
-    const routeCells = ROUTE_KEYS.map(k => fmt(routes[k] || 0)).join('');
-
+    const routeCells = ROUTE_KEYS.map(k => cell(routeAccum[k]||0)).join('');
     return `
-        <td>${name}</td>
-        ${fmt(cS)} ${fmt(aS)}
-        ${fmt(cI)} ${fmt(aI)}
-        ${fmt(cD)} ${fmt(aD)}
-        ${fmt(cDQ, true)} ${fmt(aDQ, true)}
-        ${routeCells}
-    `;
+      <td>${name}</td>
+      ${cell(cS)} ${cell(cI)}
+      ${cell(cD)} ${cell(aD)}
+      ${cell(cDQ, true)} ${cell(aDQ, true)}
+      ${routeCells}`;
 }
 
-/* =====================================================================
-   기존 테이블/차트 렌더링 함수
-===================================================================== */
-function renderCompTable(id, cur, pre) {
+/* ============================================================
+   인입경로 테이블 (계약현황 탭)
+============================================================ */
+function renderRouteTable(routeSum) {
+    const tbody = $('routeTable').querySelector('tbody');
+    tbody.innerHTML = '';
+    const total = Object.values(routeSum).reduce((a,b)=>a+b, 0);
+    // ROUTE_KEYS 순서대로 표시
+    ROUTE_KEYS.forEach(k => {
+        const c = routeSum[k] || 0;
+        if (c === 0) return;
+        const pct = total ? ((c/total)*100).toFixed(1) : 0;
+        const col = ROUTE_COLORS[k] || { bg:'#f8fafc', color:'#1e293b' };
+        tbody.innerHTML += `<tr>
+          <td><span style="background:${col.bg};color:${col.color};padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">${k}</span></td>
+          <td style="font-weight:700;">${c}건</td>
+          <td>${pct}%</td>
+        </tr>`;
+    });
+    // 기타가 있으면 추가
+    if (routeSum['기타']) {
+        const c = routeSum['기타'];
+        const pct = total ? ((c/total)*100).toFixed(1) : 0;
+        tbody.innerHTML += `<tr>
+          <td><span style="background:#f1f5f9;color:#64748b;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:700;">기타</span></td>
+          <td style="font-weight:700;">${c}건</td>
+          <td>${pct}%</td>
+        </tr>`;
+    }
+}
+
+/* ============================================================
+   기존 테이블
+============================================================ */
+function renderCompTable(id, cur, pre, lbl) {
     const tbody = $(id).querySelector('tbody');
     tbody.innerHTML = '';
-    const all = Array.from(new Set([...Object.keys(cur), ...Object.keys(pre)]));
-    all.sort((a, b) => (cur[b] || 0) - (cur[a] || 0)).forEach(v => {
-        const c = cur[v] || 0, p = pre[v] || 0, diff = c - p;
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${v}</td><td>${p}</td><td>${c}</td>
-            <td class="${diff >= 0 ? 'up' : 'down'}">${diff >= 0 ? '▲' : '▼'} ${Math.abs(diff)}</td>`;
-        tbody.appendChild(tr);
+    const all = Array.from(new Set([...Object.keys(cur),...Object.keys(pre)]));
+    all.sort((a,b)=>(cur[b]||0)-(cur[a]||0)).forEach(v => {
+        const c=cur[v]||0, p=pre[v]||0, diff=c-p;
+        tbody.innerHTML += `<tr>
+          <td>${v}</td>
+          <td>${p} <span style="font-size:10px;color:#94a3b8;">(${lbl.prev})</span></td>
+          <td>${c} <span style="font-size:10px;color:#94a3b8;">(${lbl.cur})</span></td>
+          <td class="${diff>=0?'up':'down'}">${diff>=0?'▲':'▼'} ${Math.abs(diff)}</td>
+        </tr>`;
     });
 }
-
-function renderDocTable(id, cur, pre, qtyMap) {
+function renderDocTable(id, cur, pre, qtyMap, lbl) {
     const tbody = $(id).querySelector('tbody');
     tbody.innerHTML = '';
-    const all = Array.from(new Set([...Object.keys(cur), ...Object.keys(pre)]));
-    all.sort((a, b) => (cur[b] || 0) - (cur[a] || 0)).forEach(v => {
-        const c = cur[v] || 0, p = pre[v] || 0, diff = c - p;
-        const qty = (qtyMap[v] || 0).toLocaleString();
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${v}</td><td>${p}</td><td>${c}</td>
-            <td class="${diff >= 0 ? 'up' : 'down'}">${diff >= 0 ? '▲' : '▼'} ${Math.abs(diff)}</td>
-            <td>${qty} kW</td>`;
-        tbody.appendChild(tr);
+    const all = Array.from(new Set([...Object.keys(cur),...Object.keys(pre)]));
+    all.sort((a,b)=>(cur[b]||0)-(cur[a]||0)).forEach(v => {
+        const c=cur[v]||0, p=pre[v]||0, diff=c-p;
+        tbody.innerHTML += `<tr>
+          <td>${v}</td>
+          <td>${p} <span style="font-size:10px;color:#94a3b8;">(${lbl.prev})</span></td>
+          <td>${c} <span style="font-size:10px;color:#94a3b8;">(${lbl.cur})</span></td>
+          <td class="${diff>=0?'up':'down'}">${diff>=0?'▲':'▼'} ${Math.abs(diff)}</td>
+          <td>${(qtyMap[v]||0).toLocaleString()} kW</td>
+        </tr>`;
     });
 }
 
-function renderPathTable(paths) {
-    const tbody = $('pathTable').querySelector('tbody');
-    tbody.innerHTML = '';
-    const total = Object.values(paths).reduce((a, b) => a + b, 0);
-    Object.keys(paths).sort((a, b) => paths[b] - paths[a]).forEach(p => {
-        const c = paths[p];
-        const pct = total ? ((c / total) * 100).toFixed(1) : 0;
-        tbody.innerHTML += `<tr><td>${p}</td><td>${c}건</td><td>${pct}%</td></tr>`;
-    });
-}
-
-function drawCompChart(id, cur, pre) {
+/* ============================================================
+   차트
+============================================================ */
+function drawCompChart(id, cur, pre, lbl) {
     if (charts[id]) charts[id].destroy();
-    const labels = Array.from(new Set([...Object.keys(cur), ...Object.keys(pre)])).slice(0, 10);
+    const labels = Array.from(new Set([...Object.keys(cur),...Object.keys(pre)])).slice(0,10);
     charts[id] = new Chart($(id), {
-        type: 'bar',
-        data: {
+        type:'bar',
+        data:{
             labels,
-            datasets: [
-                { label: '이전 실적', data: labels.map(l => pre[l] || 0), backgroundColor: '#cbd5e1' },
-                { label: '현재 실적', data: labels.map(l => cur[l] || 0), backgroundColor: '#2563eb' }
+            datasets:[
+                { label:lbl.prev, data:labels.map(l=>pre[l]||0), backgroundColor:'#cbd5e1' },
+                { label:lbl.cur,  data:labels.map(l=>cur[l]||0), backgroundColor:'#2563eb' }
             ]
         },
-        options: {
-            maintainAspectRatio: false,
-            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
-        }
+        options:{ maintainAspectRatio:false, scales:{ y:{ beginAtZero:true, ticks:{stepSize:1} } } }
     });
 }
-
-function drawPieChart(id, labels, data) {
+function drawPieChart(id, labels, data, colors) {
     if (charts[id]) charts[id].destroy();
+    if (!labels.length) return;
     charts[id] = new Chart($(id), {
-        type: 'doughnut',
-        data: {
-            labels,
-            datasets: [{
-                data,
-                backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#22c55e', '#6366f1']
-            }]
-        },
-        options: {
-            maintainAspectRatio: false,
-            plugins: { legend: { position: 'bottom' } }
-        }
+        type:'doughnut',
+        data:{ labels, datasets:[{ data, backgroundColor: colors || ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444'] }] },
+        options:{ maintainAspectRatio:false, plugins:{ legend:{ position:'bottom' } } }
     });
 }
 
-/* =====================================================================
-   시계
-===================================================================== */
-setInterval(() => { $('clock').textContent = new Date().toLocaleString(); }, 1000);
+setInterval(()=>{ $('clock').textContent = new Date().toLocaleString(); }, 1000);
 </script>
 </body>
 </html>
