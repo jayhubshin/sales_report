@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: "pages"
   cancel-in-progress: true
 
 jobs:
@@ -53,6 +53,12 @@ jobs:
           print(f"   URL    : {url[:20]}...")
           print(f"   BUCKET : {bucket}")
           EOF
+
+      - name: Delete old artifacts
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: github-pages
+          failOnError: false
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
