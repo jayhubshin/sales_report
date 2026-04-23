@@ -213,11 +213,12 @@ body { background: var(--bg); color: var(--text); }
       <table class="tbl" id="docListTable">
         <thead>
           <tr>
-            <th>영업업체명</th>
             <th>계약일</th>
+            <th>영업채널명</th>
             <th>계약구분</th>
-            <th>인입경로</th>
-            <th>수량(기)</th>
+            <th>사업구분</th>
+            <th>현장명</th>
+            <th>계약수량(기)</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -662,13 +663,14 @@ function renderAll(){
     if(d>=W.cur.s&&d<=W.cur.e){
       cD[v]=(cD[v]||0)+1; cDQ[v]=(cDQ[v]||0)+q;
       tQ+=q; rSQ[rt]=(rSQ[rt]||0)+q;
-      // 계약체결 목록용
+      // 계약체결 목록용 — 기존 코드에서 push 부분만 교체
       docListRows.push({
-        vendor: v,
-        date: String(r[10]||''),
-        contractType,
-        route: ROUTE_LABELS[rt]||rt,
-        qty: Math.round(q)
+        vendor  : v,
+        date    : String(r[10]||''),
+        contractType: contractType,          // L열 계약구분
+        bizType : String(r[13]||'').trim(),  // N열 사업구분
+        siteName: String(r[2]||'').trim(),   // C열 현장명 (서류목록)
+        qty     : Math.round(q)
       });
     } else if(d>=W.pre.s&&d<=W.pre.e){
       pD[v]=(pD[v]||0)+1;
@@ -925,24 +927,42 @@ function renderDocList(rows, lbl){
   $('docListLabel').textContent=`계약체결 목록 (${lbl.cur})`;
   const tb=$('docListTable').querySelector('tbody');
   tb.innerHTML='';
+
   if(!rows.length){
-    tb.innerHTML=`<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:20px;">해당 기간 계약체결 내역이 없습니다.</td></tr>`;
+    tb.innerHTML=`<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:20px;">해당 기간 계약체결 내역이 없습니다.</td></tr>`;
     return;
   }
+
   // 날짜 내림차순 정렬
   rows.sort((a,b)=>new Date(b.date)-new Date(a.date));
+
   rows.forEach(r=>{
     const d=parseD(r.date);
-    const dateStr=d?`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`:'';
+    const dateStr=d
+      ?`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+      :'';
+
+    // 인입경로 — 현장목록 F열(index 5)에서 현장명으로 매칭
+    const siteRow = STORE.site.slice(3).find(s=>
+      String(s[2]||'').trim() === r.siteName  // 현장목록 C열(index2) = 현장명
+    );
+    const inboundPath = siteRow ? String(siteRow[5]||'').trim() : '-'; // F열(index5)
+
     tb.innerHTML+=`<tr>
-      <td>${r.vendor}</td>
       <td>${dateStr}</td>
-      <td>${r.contractType}</td>
-      <td><span style="background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">${r.route||'-'}</span></td>
+      <td style="font-weight:700;">${r.vendor}</td>
+      <td>${r.contractType||'-'}</td>
+      <td>
+        <span style="background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">
+          ${r.bizType||'-'}
+        </span>
+      </td>
+      <td>${r.siteName||'-'}</td>
       <td style="font-weight:700;text-align:right;">${r.qty.toLocaleString()}</td>
     </tr>`;
   });
 }
+
 
   
 setInterval(()=>{$('clock').textContent=new Date().toLocaleString();},1000);
