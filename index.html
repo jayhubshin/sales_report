@@ -110,6 +110,10 @@ body { background: var(--bg); color: var(--text); }
 .result-time{font-size:11px;color:#94a3b8;margin-top:8px;text-align:right;}
 .result-close-btn{width:100%;margin-top:16px;padding:10px;background:#1e293b;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;}
 .result-close-btn:hover{background:#334155;}
+  /* 목표 달성률 색상 */
+.goal-bar-ok  { color: #10b981; font-weight: 800; }
+.goal-bar-low { color: #ef4444; font-weight: 800; }
+
 </style>
 </head>
 <body>
@@ -163,7 +167,6 @@ body { background: var(--bg); color: var(--text); }
   </div>
 </div>
 
-
 <!-- 종합현황 -->
 <div id="mn-0" class="mn on">
   <div class="g-4">
@@ -172,6 +175,8 @@ body { background: var(--bg); color: var(--text); }
     <div class="kpi-card orange"><h3 id="kpi-doc-label">계약체결 (금주)</h3><div class="val" id="s-doc">0</div><div class="sub">건</div></div>
     <div class="kpi-card purple"><h3 id="kpi-qty-label">계약수량 (금주)</h3><div class="val" id="s-qty">0</div><div class="sub">기</div></div>
   </div>
+
+  <!-- 요약표 -->
   <div class="summary-card">
     <div class="summary-card-header">
       <h3>업체별 통합 실적 요약표</h3>
@@ -188,8 +193,39 @@ body { background: var(--bg); color: var(--text); }
       </div>
     </div>
   </div>
-  <div class="cd"><h3>성과 통합 비중</h3><div class="chart-h"><canvas id="pieAll"></canvas></div></div>
+
+  <!-- 성과 비교 차트 -->
+  <div class="g-stat">
+    <div class="cd">
+      <h3 id="chartOverviewLabel">전주 대비 금주 실적 비교</h3>
+      <div class="chart-h"><canvas id="barOverview"></canvas></div>
+    </div>
+    <div class="cd">
+      <h3 id="chartGoalLabel">주간 목표 달성률</h3>
+      <div class="chart-h"><canvas id="barGoal"></canvas></div>
+    </div>
+  </div>
+
+  <!-- 계약체결 건수 목록 -->
+  <div class="cd" style="margin-top:0;">
+    <h3 id="docListLabel">계약체결 목록 (금주)</h3>
+    <div class="tbl-wrap" style="max-height:320px;">
+      <table class="tbl" id="docListTable">
+        <thead>
+          <tr>
+            <th>영업업체명</th>
+            <th>계약일</th>
+            <th>계약구분</th>
+            <th>인입경로</th>
+            <th>수량(기)</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
 </div>
+
 
 <!-- 현장현황 -->
 <div id="mn-1" class="mn">
@@ -580,11 +616,13 @@ function getRanges(){
   return{cur:{s:curS,e:curE},pre:{s:preS,e:preE},accum:{s:accumS,e:accumE},yearLabel};
 }
 function renderAll(){
-  const W=getRanges(),lbl=MODE_LABEL[mode];
+  const W=getRanges(), lbl=MODE_LABEL[mode];
   $('kpi-site-label').textContent=`현장등록 (${lbl.cur})`;
   $('kpi-ins-label').textContent =`실사완료 (${lbl.cur})`;
   $('kpi-doc-label').textContent =`계약체결 (${lbl.cur})`;
   $('kpi-qty-label').textContent =`계약수량 (${lbl.cur})`;
+
+  // 현장등록
   let cS={},pS={},aS={};
   STORE.site.slice(3).forEach(r=>{
     const d=parseD(r[8]),v=String(r[1]||'미지정').trim();
@@ -593,6 +631,8 @@ function renderAll(){
     if(d>=W.cur.s&&d<=W.cur.e)     cS[v]=(cS[v]||0)+1;
     else if(d>=W.pre.s&&d<=W.pre.e)pS[v]=(pS[v]||0)+1;
   });
+
+  // 현장실사
   let cI={},pI={},aI={};
   STORE.ins.slice(3).forEach(r=>{
     const d=parseD(r[8]),v=String(r[1]||'미지정').trim();
@@ -601,26 +641,63 @@ function renderAll(){
     if(d>=W.cur.s&&d<=W.cur.e)     cI[v]=(cI[v]||0)+1;
     else if(d>=W.pre.s&&d<=W.pre.e)pI[v]=(pI[v]||0)+1;
   });
+
+  // 계약 — J열(index9) "체결" 포함만 카운트
   let cD={},pD={},aD={},cDQ={},aDQ={},tQ=0,vRQ={},rSQ={};
+  let docListRows=[];
+
   STORE.doc.slice(3).forEach(r=>{
-    if(!String(r[9]||'').includes('체결')) return;
-    const d=parseD(r[10]);if(!d) return;
-    const v=String(r[8]||'미지정').trim(),q=parseFloat(r[14])||0,rt=classifyRoute(r);
+    if(!String(r[9]||'').includes('체결')) return;   // ← J열 체결 필터
+    const d=parseD(r[10]); if(!d) return;
+    const v  = String(r[8]||'미지정').trim();
+    const q  = parseFloat(r[14])||0;
+    const rt = classifyRoute(r);
+    const contractType = String(r[11]||'').trim(); // L열 계약구분
+
     if(d>=W.accum.s&&d<=W.accum.e){
-      aD[v]=(aD[v]||0)+1;aDQ[v]=(aDQ[v]||0)+q;
-      if(!vRQ[v])vRQ[v]={};vRQ[v][rt]=(vRQ[v][rt]||0)+q;
+      aD[v]=(aD[v]||0)+1; aDQ[v]=(aDQ[v]||0)+q;
+      if(!vRQ[v]) vRQ[v]={};
+      vRQ[v][rt]=(vRQ[v][rt]||0)+q;
     }
     if(d>=W.cur.s&&d<=W.cur.e){
-      cD[v]=(cD[v]||0)+1;cDQ[v]=(cDQ[v]||0)+q;tQ+=q;rSQ[rt]=(rSQ[rt]||0)+q;
-    }else if(d>=W.pre.s&&d<=W.pre.e) pD[v]=(pD[v]||0)+1;
+      cD[v]=(cD[v]||0)+1; cDQ[v]=(cDQ[v]||0)+q;
+      tQ+=q; rSQ[rt]=(rSQ[rt]||0)+q;
+      // 계약체결 목록용
+      docListRows.push({
+        vendor: v,
+        date: String(r[10]||''),
+        contractType,
+        route: ROUTE_LABELS[rt]||rt,
+        qty: Math.round(q)
+      });
+    } else if(d>=W.pre.s&&d<=W.pre.e){
+      pD[v]=(pD[v]||0)+1;
+    }
   });
+
   const sum=o=>Object.values(o).reduce((a,b)=>a+b,0);
-  $('s-site').textContent=sum(cS);
-  $('s-ins').textContent =sum(cI);
-  $('s-doc').textContent =sum(cD);
-  $('s-qty').textContent =Math.round(tQ).toLocaleString();
+  const tSC=sum(cS), tSP=sum(pS);
+  const tIC=sum(cI), tIP=sum(pI);
+  const tDC=sum(cD), tDP=sum(pD);
+  const tQC=Math.round(tQ);
+
+  $('s-site').textContent=tSC;
+  $('s-ins').textContent =tIC;
+  $('s-doc').textContent =tDC;
+  $('s-qty').textContent =tQC.toLocaleString();
+
+  // 요약표
   renderSummaryTable({lbl,W,curSite:cS,accumSite:aS,curIns:cI,accumIns:aI,
     curDoc:cD,accumDoc:aD,curDocQty:cDQ,accumDocQty:aDQ,vendorRouteAccumQty:vRQ});
+
+  // 비교 차트 & 목표 차트
+  drawOverviewChart(tSC,tSP,tIC,tIP,tDC,tDP,tQC,lbl);
+  drawGoalChart(tSC,tIC,tDC,tQC);
+
+  // 계약체결 목록
+  renderDocList(docListRows, lbl);
+
+  // 다른 탭 차트
   renderCompTable('siteTable',cS,pS,lbl);
   renderCompTable('insTable',cI,pI,lbl);
   renderDocTable('docTable',cD,pD,cDQ,lbl);
@@ -631,8 +708,8 @@ function renderAll(){
   const rL=ROUTE_KEYS.filter(k=>rSQ[k]>0);
   drawPieChart('pieRoute',rL.map(k=>ROUTE_LABELS[k]),rL.map(k=>rSQ[k]),rL.map(k=>ROUTE_COLORS[k]?.bar));
   drawPieChart('piePath', rL.map(k=>ROUTE_LABELS[k]),rL.map(k=>rSQ[k]),rL.map(k=>ROUTE_COLORS[k]?.bar));
-  drawPieChart('pieAll',['현장등록','실사완료','계약체결'],[sum(cS),sum(cI),sum(cD)],['#3b82f6','#10b981','#f59e0b']);
 }
+
 function renderSummaryTable({lbl,W,curSite,accumSite,curIns,accumIns,curDoc,accumDoc,curDocQty,accumDocQty,vendorRouteAccumQty}){
   const aL=mode==='year'?`전년(${W.yearLabel})`:'누적';
   $('summaryHead').innerHTML=
@@ -642,7 +719,7 @@ function renderSummaryTable({lbl,W,curSite,accumSite,curIns,accumIns,curDoc,accu
       <th class="th-ins"  colspan="2">현장실사</th>
       <th class="th-dcnt" colspan="2">계약완료(건)</th>
       <th class="th-dqty" colspan="2">계약완료(기)</th>
-      <th class="th-route" colspan="5">인입경로별 계약수량(기) — ${aL}</th>
+      <th class="th-route" colspan="5">계약구분별 계약수량(기) — ${aL}</th>
     </tr>
     <tr>
       <th class="th2-site">${lbl.cur}</th><th class="th2-site">${aL}</th>
@@ -741,6 +818,133 @@ function drawPieChart(id,labels,data,colors){
     options:{maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}
   });
 }
+/* 전주 비교 막대그래프 */
+function drawOverviewChart(tSC,tSP,tIC,tIP,tDC,tDP,tQC,lbl){
+  if(charts['barOverview']) charts['barOverview'].destroy();
+  $('chartOverviewLabel').textContent=`${lbl.prev} 대비 ${lbl.cur} 실적 비교`;
+  const labels=['현장등록','현장실사','계약체결(건)'];
+  charts['barOverview']=new Chart($('barOverview'),{
+    type:'bar',
+    data:{
+      labels,
+      datasets:[
+        {
+          label:lbl.prev,
+          data:[tSP,tIP,tDP],
+          backgroundColor:'#cbd5e1',
+          borderRadius:4
+        },
+        {
+          label:lbl.cur,
+          data:[tSC,tIC,tDC],
+          backgroundColor:['#3b82f6','#10b981','#f59e0b'],
+          borderRadius:4
+        }
+      ]
+    },
+    options:{
+      maintainAspectRatio:false,
+      plugins:{legend:{position:'top'}},
+      scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}
+    }
+  });
+}
+
+/* 주간 목표 달성률 차트 */
+function drawGoalChart(tSC,tIC,tDC,tQC){
+  if(charts['barGoal']) charts['barGoal'].destroy();
+
+  // 연간 목표 13000기 기준 주간 목표 (52주)
+  const ANNUAL_GOAL = 13000;
+  const WEEKLY_GOAL_QTY  = Math.round(ANNUAL_GOAL / 52);  // ≈ 250기/주
+  const WEEKLY_GOAL_SITE = Math.round(WEEKLY_GOAL_QTY * 3);  // 대략 현장등록
+  const WEEKLY_GOAL_INS  = Math.round(WEEKLY_GOAL_QTY * 2);  // 대략 실사
+  const WEEKLY_GOAL_DOC  = Math.round(WEEKLY_GOAL_QTY / 5);  // 대략 계약건
+
+  // 모드별 목표 배율
+  let mult=1;
+  if(mode==='month')   mult=4.3;
+  if(mode==='quarter') mult=13;
+  if(mode==='year')    mult=52;
+
+  const goals=[
+    Math.round(WEEKLY_GOAL_SITE*mult),
+    Math.round(WEEKLY_GOAL_INS*mult),
+    Math.round(WEEKLY_GOAL_DOC*mult),
+    Math.round(WEEKLY_GOAL_QTY*mult)
+  ];
+  const actuals=[tSC,tIC,tDC,tQC];
+  const labels=['현장등록','현장실사','계약체결(건)','계약수량(기)'];
+  const pcts=actuals.map((a,i)=>goals[i]?Math.round((a/goals[i])*100):0);
+
+  const colors=pcts.map(p=>p>=100?'#10b981':p>=70?'#f59e0b':'#ef4444');
+
+  $('chartGoalLabel').textContent=`목표 달성률 (연간 ${ANNUAL_GOAL.toLocaleString()}기 기준)`;
+
+  charts['barGoal']=new Chart($('barGoal'),{
+    type:'bar',
+    data:{
+      labels,
+      datasets:[
+        {
+          label:'목표',
+          data:goals,
+          backgroundColor:'#e2e8f0',
+          borderRadius:4
+        },
+        {
+          label:'실적',
+          data:actuals,
+          backgroundColor:colors,
+          borderRadius:4
+        }
+      ]
+    },
+    options:{
+      maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'top'},
+        tooltip:{
+          callbacks:{
+            afterLabel:(ctx)=>{
+              if(ctx.datasetIndex===1){
+                return `달성률: ${pcts[ctx.dataIndex]}%`;
+              }
+              return '';
+            }
+          }
+        }
+      },
+      scales:{y:{beginAtZero:true}}
+    }
+  });
+}
+
+/* 계약체결 목록 */
+function renderDocList(rows, lbl){
+  $('docListLabel').textContent=`계약체결 목록 (${lbl.cur})`;
+  const tb=$('docListTable').querySelector('tbody');
+  tb.innerHTML='';
+  if(!rows.length){
+    tb.innerHTML=`<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:20px;">해당 기간 계약체결 내역이 없습니다.</td></tr>`;
+    return;
+  }
+  // 날짜 내림차순 정렬
+  rows.sort((a,b)=>new Date(b.date)-new Date(a.date));
+  rows.forEach(r=>{
+    const d=parseD(r.date);
+    const dateStr=d?`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`:'';
+    tb.innerHTML+=`<tr>
+      <td>${r.vendor}</td>
+      <td>${dateStr}</td>
+      <td>${r.contractType}</td>
+      <td><span style="background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;">${r.route||'-'}</span></td>
+      <td style="font-weight:700;text-align:right;">${r.qty.toLocaleString()}</td>
+    </tr>`;
+  });
+}
+
+  
 setInterval(()=>{$('clock').textContent=new Date().toLocaleString();},1000);
 </script>
 </body>
