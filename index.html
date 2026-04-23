@@ -317,38 +317,40 @@ async function loadFromSupabase(){
     tag.textContent=`⏳ ${label} 불러오는 중...`;
     $('tagBox').appendChild(tag);
     try{
-      // ✅ 캐시 무력화 — 타임스탬프를 쿼리로 추가해서 항상 새 파일 요청
+      // ✅ signed URL로 캐시 무력화
       const ts = Date.now();
-      const { data: urlData } = client.storage
+      const { data: signedData, error: signErr } = await client.storage
         .from(_SB_BUCKET)
-        .getPublicUrl(`${fileName}?t=${ts}`);
+        .createSignedUrl(fileName, 60);  // 60초 유효 URL
 
-      const res = await fetch(`${urlData.publicUrl}`, {
-        cache: 'no-store',                          // 브라우저 캐시 완전 무시
-        headers: { 'Cache-Control': 'no-cache' }
+      if(signErr) throw new Error(signErr.message);
+
+      // cache: 'no-store' 로 브라우저 캐시 완전 무시
+      const res = await fetch(`${signedData.signedUrl}&t=${ts}`, {
+        cache: 'no-store'
       });
 
       if(!res.ok) throw new Error(`HTTP ${res.status}`);
       const buf = await res.arrayBuffer();
-      const wb=XLSX.read(new Uint8Array(buf),{type:'array'});
-      const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1});
-      STORE[storeKey]=rows;
+      const wb = XLSX.read(new Uint8Array(buf),{type:'array'});
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1});
+      STORE[storeKey] = rows;
       loaded++;
       tag.className='tag ok';
       tag.textContent=`☁️ ${label} 로드완료`;
-      results.push({type:'ok',label,rows:rows.length});
+      results.push({type:'ok', label, rows:rows.length});
     }catch(e){
-      const isNotFound=e.message.includes('Object not found')||e.message.includes('404');
+      const isNotFound = e.message.includes('Object not found')||e.message.includes('404');
       if(isNotFound){
         notFound++;
         tag.className='tag';
         tag.textContent=`📭 ${label} 미업로드`;
-        results.push({type:'empty',label});
+        results.push({type:'empty', label});
       }else{
         failed++;
         tag.className='tag fail';
         tag.textContent=`❌ ${label} 실패: ${e.message}`;
-        results.push({type:'fail',label,msg:e.message});
+        results.push({type:'fail', label, msg:e.message});
       }
     }
   }
@@ -375,6 +377,7 @@ async function loadFromSupabase(){
   if(loaded>0) renderAll();
   $('btnLoad').disabled=false;
 }
+
 
 /* ⑦ 파일 업로드 */
 async function loadFiles(files){
