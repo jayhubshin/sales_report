@@ -264,6 +264,16 @@ body { background: var(--bg); color: var(--text); }
       </table>
     </div>
   </div>
+  <div class="g-stat">
+  <div class="cd">
+    <h3 id="chartVendorLabel">영업채널별 계약건 및 수량</h3>
+    <div style="height:320px;"><canvas id="barVendor"></canvas></div>
+  </div>
+  <div class="cd">
+    <h3>영업채널별 계약수량 비중</h3>
+    <div class="chart-s"><canvas id="pieVendor"></canvas></div>
+  </div>
+</div>
 </div>
 
 <script>
@@ -647,7 +657,104 @@ function renderAll(){
       tQP+=q;
       pDQ[v]=(pDQ[v]||0)+q;
     }
+
+   drawVendorChart(cD, cDQ, lbl);
+    
   });
+  function drawVendorChart(cur, qtyMap, lbl){
+  if(charts['barVendor'])  charts['barVendor'].destroy();
+  if(charts['pieVendor'])  charts['pieVendor'].destroy();
+
+  // 계약수량 내림차순 정렬
+  const vendors = Object.keys(cur)
+    .filter(v => cur[v] > 0 || qtyMap[v] > 0)
+    .sort((a,b) => (qtyMap[b]||0) - (qtyMap[a]||0));
+
+  if(!vendors.length) return;
+
+  const counts = vendors.map(v => cur[v]||0);
+  const qtys   = vendors.map(v => Math.round(qtyMap[v]||0));
+
+  $('chartVendorLabel').textContent = `영업채널별 계약건 및 수량 (${lbl.cur})`;
+
+  /* 가로 막대 — 계약건(좌축) + 계약수량(우축) */
+  charts['barVendor'] = new Chart($('barVendor'), {
+    type: 'bar',
+    data: {
+      labels: vendors,
+      datasets: [
+        {
+          label: '계약건(건)',
+          data: counts,
+          backgroundColor: '#3b82f6',
+          borderRadius: 4,
+          yAxisID: 'y',
+        },
+        {
+          label: '계약수량(기)',
+          data: qtys,
+          backgroundColor: '#8b5cf6',
+          borderRadius: 4,
+          yAxisID: 'y2',
+        }
+      ]
+    },
+    options: {
+      indexAxis: 'y',          // 가로 막대
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top' },
+        tooltip: {
+          callbacks: {
+            label: ctx => ctx.datasetIndex === 0
+              ? `계약건: ${ctx.raw}건`
+              : `계약수량: ${ctx.raw.toLocaleString()}기`
+          }
+        }
+      },
+      scales: {
+        y:  { beginAtZero: true },
+        y2: {
+          position: 'right',
+          beginAtZero: true,
+          grid: { drawOnChartArea: false },
+          ticks: { color: '#8b5cf6' }
+        }
+      }
+    }
+  });
+
+  /* 도넛 — 계약수량 비중 */
+  const PIE_COLORS = [
+    '#3b82f6','#10b981','#f59e0b','#8b5cf6',
+    '#ef4444','#ec4899','#14b8a6','#f97316','#64748b'
+  ];
+  charts['pieVendor'] = new Chart($('pieVendor'), {
+    type: 'doughnut',
+    data: {
+      labels: vendors,
+      datasets: [{
+        data: qtys,
+        backgroundColor: PIE_COLORS.slice(0, vendors.length)
+      }]
+    },
+    options: {
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const total = ctx.dataset.data.reduce((a,b)=>a+b, 0);
+              const pct   = total ? ((ctx.raw / total) * 100).toFixed(1) : 0;
+              return `${ctx.label}: ${ctx.raw.toLocaleString()}기 (${pct}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+}
 
   const sum = o => Object.values(o).reduce((a,b)=>a+b, 0);
   const tSC=sum(cS), tSP=sum(pS);
