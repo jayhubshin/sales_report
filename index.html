@@ -265,15 +265,15 @@ body { background: var(--bg); color: var(--text); }
     </div>
   </div>
   <div class="g-stat">
-  <div class="cd">
-    <h3 id="chartVendorLabel">영업채널별 계약건 및 수량</h3>
-    <div style="height:320px;"><canvas id="barVendor"></canvas></div>
+    <div class="cd">
+      <h3 id="chartVendorLabel">영업채널별 계약건 및 수량</h3>
+      <div style="height:320px;"><canvas id="barVendor"></canvas></div>
+    </div>
+    <div class="cd">
+      <h3>영업채널별 계약수량 비중</h3>
+      <div class="chart-s"><canvas id="pieVendor"></canvas></div>
+    </div>
   </div>
-  <div class="cd">
-    <h3>영업채널별 계약수량 비중</h3>
-    <div class="chart-s"><canvas id="pieVendor"></canvas></div>
-  </div>
-</div>
 </div>
 
 <script>
@@ -533,7 +533,6 @@ function getRanges(){
     accumS=new Date(curE.getFullYear(),0,1);
     accumE=new Date(curE);
     yearLabel=String(curE.getFullYear());
-
   } else if(mode==='biweek'){
     const day=base.getDay(), dif=day>=5?day-5:day+2;
     const fri=new Date(base); fri.setDate(base.getDate()-dif);
@@ -544,7 +543,6 @@ function getRanges(){
     accumS=new Date(curE.getFullYear(),0,1);
     accumE=new Date(curE);
     yearLabel=String(curE.getFullYear());
-
   } else if(mode==='month'){
     curS=new Date(base.getFullYear(), base.getMonth(), 1);
     curE=new Date(base.getFullYear(), base.getMonth()+1, 0);
@@ -553,7 +551,6 @@ function getRanges(){
     accumS=new Date(base.getFullYear(),0,1);
     accumE=new Date(curE);
     yearLabel=String(base.getFullYear());
-
   } else if(mode==='quarter'){
     const q=Math.floor(base.getMonth()/3);
     curS=new Date(base.getFullYear(), q*3, 1);
@@ -563,7 +560,6 @@ function getRanges(){
     accumS=new Date(base.getFullYear(),0,1);
     accumE=new Date(curE);
     yearLabel=String(base.getFullYear());
-
   } else {
     curS=new Date(base.getFullYear(),0,1);
     curE=new Date(base.getFullYear(),11,31);
@@ -580,6 +576,10 @@ function getRanges(){
   return {cur:{s:curS,e:curE}, pre:{s:preS,e:preE}, accum:{s:accumS,e:accumE}, yearLabel};
 }
 
+/* =============================================
+   renderAll — 모든 집계/렌더 함수 호출
+   forEach 루프 완전히 닫힌 후 호출
+   ============================================= */
 function renderAll(){
   const W   = getRanges();
   const lbl = MODE_LABEL[mode];
@@ -589,7 +589,7 @@ function renderAll(){
   $('kpi-doc-label') .textContent = `계약체결 (${lbl.cur})`;
   $('kpi-qty-label') .textContent = `계약수량 (${lbl.cur})`;
 
-  /* 현장등록 — B열(인덱스1): 업체명, I열(인덱스8): 등록일 */
+  /* ── 현장등록 ── B열(1): 업체명, I열(8): 등록일 */
   const cS={}, pS={}, aS={};
   STORE.site.slice(3).forEach(r=>{
     const d = parseD(r[8]);
@@ -600,7 +600,7 @@ function renderAll(){
     if(d>=W.pre.s   && d<=W.pre.e)   pS[v]=(pS[v]||0)+1;
   });
 
-  /* 현장실사 — C열(인덱스2): 공사업체명, I열(인덱스8): 실사일 */
+  /* ── 현장실사 ── C열(2): 공사업체명, I열(8): 실사일 */
   const cI={}, pI={}, aI={};
   STORE.ins.slice(3).forEach(r=>{
     const d = parseD(r[8]);
@@ -611,13 +611,13 @@ function renderAll(){
     if(d>=W.pre.s   && d<=W.pre.e)   pI[v]=(pI[v]||0)+1;
   });
 
-  /* 계약 — I열(인덱스8): 업체명, J열(인덱스9): 계약여부, K열(인덱스10): 계약일, O열(인덱스14): 수량 */
+  /* ── 계약 ── I열(8): 업체명, J열(9): 계약여부, K열(10): 계약일, O열(14): 수량 */
   const cD={}, pD={}, aD={};
-  const cDQ={}, aDQ={}, pDQ={};
-  let tQ=0, tQP=0;
-  const vRQ={}, rSQ={};
-  const bSQ={};          /* ← forEach 밖에서 선언 */
+  const cDQ={}, pDQ={}, aDQ={};
+  const vRQ={};
+  const bSQ={};       /* 사업구분별 수량 — forEach 밖에서 선언 */
   const docListRows=[];
+  let tQ=0, tQP=0;
 
   STORE.doc.slice(3).forEach(r=>{
     if(!String(r[9]||'').includes('체결')) return;
@@ -627,16 +627,17 @@ function renderAll(){
     const q  = parseFloat(r[14])||0;
     const rt = classifyRoute(r);
 
+    /* 누적 */
     if(d>=W.accum.s && d<=W.accum.e){
       aD[v]=(aD[v]||0)+1; aDQ[v]=(aDQ[v]||0)+q;
       if(!vRQ[v]) vRQ[v]={};
       vRQ[v][rt]=(vRQ[v][rt]||0)+q;
     }
+    /* 현재 기간 */
     if(d>=W.cur.s && d<=W.cur.e){
       cD[v]=(cD[v]||0)+1; cDQ[v]=(cDQ[v]||0)+q;
       tQ+=q;
-      rSQ[rt]=(rSQ[rt]||0)+q;
-      /* 사업구분 집계 — N열(인덱스13) */
+      /* 사업구분 N열(13) */
       const biz = String(r[13]||'기타').trim() || '기타';
       bSQ[biz]=(bSQ[biz]||0)+q;
 
@@ -652,130 +653,14 @@ function renderAll(){
         parkingSlot : siteRow ? String(siteRow[7]||'').trim() : '-',
       });
     }
+    /* 이전 기간 */
     if(d>=W.pre.s && d<=W.pre.e){
       pD[v]=(pD[v]||0)+1;
       pDQ[v]=(pDQ[v]||0)+q;
       tQP+=q;
     }
-
-   drawVendorChart(cD, cDQ, lbl);
-    
   });
-function drawVendorChart(cur, qtyMap, lbl) {
-  if (window._chartBarVendor) { window._chartBarVendor.destroy(); window._chartBarVendor = null; }
-  if (window._chartPieVendor) { window._chartPieVendor.destroy(); window._chartPieVendor = null; }
-
-  const vendors = Object.keys(cur)
-    .filter(k => (cur[k]||0) > 0 || (qtyMap[k]||0) > 0)
-    .sort((a,b) => (qtyMap[b]||0) - (qtyMap[a]||0));
-
-  const counts = vendors.map(k => cur[k]||0);
-  const qtys   = vendors.map(k => Math.round(qtyMap[k]||0));
-
-  const el = document.getElementById('barVendorTitle');
-  if (el) el.textContent = `영업채널별 계약건 및 수량 (${lbl.cur})`;
-
-  const ctx1 = document.getElementById('barVendor');
-  if (ctx1) {
-    window._chartBarVendor = new Chart(ctx1, {
-      type: 'bar',
-      data: {
-        labels: vendors,
-        datasets: [
-          {
-            label: '계약건(건)',
-            data: counts,
-            backgroundColor: '#3b82f6',
-            borderRadius: 4,
-            yAxisID: 'y',
-            barPercentage: 0.4,
-            categoryPercentage: 0.8,
-          },
-          {
-            label: '계약수량(기)',
-            data: qtys,
-            backgroundColor: '#8b5cf6',
-            borderRadius: 4,
-            yAxisID: 'y2',
-            barPercentage: 0.4,
-            categoryPercentage: 0.8,
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        indexAxis: 'y',
-        plugins: {
-          legend: { position: 'top', labels: { font: { size: 11 } } },
-          tooltip: {
-            callbacks: {
-              label: ctx => {
-                const v = ctx.parsed.x;
-                return ctx.dataset.label === '계약건(건)'
-                  ? ` 계약건: ${v.toLocaleString()}건`
-                  : ` 계약수량: ${v.toLocaleString()}기`;
-              }
-            }
-          }
-        },
-        scales: {
-          x: {
-            stacked: false,
-            beginAtZero: true,
-            display: false           // x축 숫자 레이블 숨김
-          },
-          y: {
-            stacked: false,
-            position: 'left',
-            ticks: { font: { size: 12 }, color: '#3b82f6' },
-            title: { display: true, text: '계약건(건)', color: '#3b82f6' }
-          },
-          y2: {
-            stacked: false,
-            position: 'right',
-            grid: { drawOnChartArea: false },
-            ticks: { font: { size: 12 }, color: '#8b5cf6' },
-            title: { display: true, text: '계약수량(기)', color: '#8b5cf6' }
-          }
-        }
-      }
-    });
-  }
-
-  // 도넛 차트 – 계약수량 비율 (변경 없음)
-  const ctx2 = document.getElementById('pieVendor');
-  if (!ctx2) return;
-  const palette = ['#8b5cf6','#3b82f6','#10b981','#f59e0b','#ef4444','#ec4899','#14b8a6','#f97316'];
-  window._chartPieVendor = new Chart(ctx2, {
-    type: 'doughnut',
-    data: {
-      labels: vendors,
-      datasets: [{
-        data: qtys,
-        backgroundColor: vendors.map((_,i) => palette[i % palette.length]),
-        borderWidth: 2,
-        borderColor: '#fff'
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { position: 'right', labels: { font: { size: 12 } } },
-        tooltip: {
-          callbacks: {
-            label: ctx => {
-              const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
-              const pct = total > 0 ? ((ctx.parsed/total)*100).toFixed(1) : 0;
-              return ` ${ctx.label}: ${ctx.parsed.toLocaleString()}기 (${pct}%)`;
-            }
-          }
-        }
-      }
-    }
-  });
-}
+  /* ↑ forEach 완전히 닫힘 — 이후 모든 렌더 호출 */
 
   const sum = o => Object.values(o).reduce((a,b)=>a+b, 0);
   const tSC=sum(cS), tSP=sum(pS);
@@ -790,9 +675,9 @@ function drawVendorChart(cur, qtyMap, lbl) {
   $('s-qty') .textContent = tQC.toLocaleString();
 
   renderSummaryTable({lbl,W,
-    curSite:cS, accumSite:aS,
-    curIns:cI,  accumIns:aI,
-    curDoc:cD,  accumDoc:aD,
+    curSite:cS,    accumSite:aS,
+    curIns:cI,     accumIns:aI,
+    curDoc:cD,     accumDoc:aD,
     curDocQty:cDQ, accumDocQty:aDQ,
     vendorRouteAccumQty:vRQ
   });
@@ -809,8 +694,12 @@ function drawVendorChart(cur, qtyMap, lbl) {
   const bL = Object.keys(bSQ).filter(k=>bSQ[k]>0).sort((a,b)=>bSQ[b]-bSQ[a]);
   drawPieChart('pieBiz', bL, bL.map(k=>bSQ[k]),
     ['#8b5cf6','#3b82f6','#10b981','#f59e0b','#ef4444','#ec4899','#14b8a6','#f97316']);
+  drawVendorChart(cD, cDQ, lbl);   /* ← forEach 밖, renderAll 안 */
 }
 
+/* =============================================
+   헬퍼 함수들 — 모두 전역 스코프
+   ============================================= */
 function classifyRoute(row){
   const b=String(row[13]||'').trim(), l=String(row[11]||'').trim();
   if(b.includes('투자설치')) return '투자설치';
@@ -840,13 +729,13 @@ function renderSummaryTable({lbl,W,curSite,accumSite,curIns,accumIns,curDoc,accu
       <th class="th2-r1">신규</th><th class="th2-r2">추가</th>
       <th class="th2-r3">자사</th><th class="th2-r4">타사</th><th class="th2-r5">투자</th>
     </tr>`;
-  const tb = $('summaryTbody'); tb.innerHTML='';
-  const allV = Array.from(new Set([
-    ...Object.keys(accumSite), ...Object.keys(accumIns),
-    ...Object.keys(accumDoc),  ...Object.keys(curSite),
-    ...Object.keys(curIns),    ...Object.keys(curDoc)
+  const tb=$('summaryTbody'); tb.innerHTML='';
+  const allV=Array.from(new Set([
+    ...Object.keys(accumSite),...Object.keys(accumIns),
+    ...Object.keys(accumDoc),...Object.keys(curSite),
+    ...Object.keys(curIns),...Object.keys(curDoc)
   ])).sort((a,b)=>(accumSite[b]||0)-(accumSite[a]||0));
-  const sum = o => Object.values(o).reduce((a,b)=>a+b, 0);
+  const sum=o=>Object.values(o).reduce((a,b)=>a+b,0);
   const rT={};
   ROUTE_KEYS.forEach(k=>{ rT[k]=Object.values(vendorRouteAccumQty).reduce((s,r)=>s+(r[k]||0),0); });
   const tTr=document.createElement('tr'); tTr.className='total-row';
@@ -856,11 +745,11 @@ function renderSummaryTable({lbl,W,curSite,accumSite,curIns,accumIns,curDoc,accu
   allV.forEach(v=>{
     const tr=document.createElement('tr');
     tr.innerHTML=buildRow(v,
-      curSite[v]||0, accumSite[v]||0,
-      curIns[v]||0,  accumIns[v]||0,
-      curDoc[v]||0,  accumDoc[v]||0,
-      curDocQty[v]||0, accumDocQty[v]||0,
-      vendorRouteAccumQty[v]||{}, false);
+      curSite[v]||0,accumSite[v]||0,
+      curIns[v]||0,accumIns[v]||0,
+      curDoc[v]||0,accumDoc[v]||0,
+      curDocQty[v]||0,accumDocQty[v]||0,
+      vendorRouteAccumQty[v]||{},false);
     tb.appendChild(tr);
   });
 }
@@ -884,17 +773,6 @@ async function captureTable(){
     link.click();
   }catch(e){ alert('캡처 오류: '+e.message); }
   btn.innerHTML='📷 요약표 캡처'; btn.disabled=false;
-}
-
-function renderRouteTableFn(rSQ){
-  const tb=$('routeTable').querySelector('tbody'); tb.innerHTML='';
-  const total=Object.values(rSQ).reduce((a,b)=>a+b,0);
-  ROUTE_KEYS.forEach(k=>{
-    const v=rSQ[k]||0; if(!v) return;
-    const pct=total?((v/total)*100).toFixed(1):0;
-    const col=ROUTE_COLORS[k];
-    tb.innerHTML+=`<tr><td><span style="background:${col.bg};color:${col.color};padding:3px 9px;border-radius:10px;font-size:11px;font-weight:700;">${ROUTE_LABELS[k]}</span></td><td style="font-weight:700;">${Math.round(v).toLocaleString()}</td><td>${pct}%</td></tr>`;
-  });
 }
 
 function renderBizTable(bSQ){
@@ -923,7 +801,10 @@ function renderCompTable(id, cur, pre, lbl){
     .sort((a,b)=>(cur[b]||0)-(cur[a]||0))
     .forEach(v=>{
       const c=cur[v]||0, p=pre[v]||0, d=c-p;
-      tb.innerHTML+=`<tr><td>${v}</td><td>${p}<span style="font-size:10px;color:#94a3b8;"> (${lbl.prev})</span></td><td>${c}<span style="font-size:10px;color:#94a3b8;"> (${lbl.cur})</span></td><td class="${d>=0?'up':'down'}">${d>=0?'▲':'▼'} ${Math.abs(d)}</td></tr>`;
+      tb.innerHTML+=`<tr><td>${v}</td>
+        <td>${p}<span style="font-size:10px;color:#94a3b8;"> (${lbl.prev})</span></td>
+        <td>${c}<span style="font-size:10px;color:#94a3b8;"> (${lbl.cur})</span></td>
+        <td class="${d>=0?'up':'down'}">${d>=0?'▲':'▼'} ${Math.abs(d)}</td></tr>`;
     });
 }
 
@@ -946,94 +827,46 @@ function renderDocTable(id, cur, pre, qtyMap, qtyPreMap, lbl){
       </tr>`;
     });
 }
-function drawDocCompChart(canvasId, cur, pre, qCur, qPre, lbl) {
-  if (window['_chart_' + canvasId]) {
-    window['_chart_' + canvasId].destroy();
-    window['_chart_' + canvasId] = null;
-  }
-  const vendors = [...new Set([...Object.keys(cur), ...Object.keys(pre)])]
-    .filter(k => (cur[k]||0)+(pre[k]||0) > 0)
-    .sort((a,b) => (cur[b]||0)-(cur[a]||0));
 
-  const ctx = document.getElementById(canvasId);
-  if (!ctx) return;
-
-  window['_chart_' + canvasId] = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: vendors,
-      datasets: [
-        {
-          label: lbl.prev + ' 건수',
-          data: vendors.map(k => pre[k]||0),
-          backgroundColor: '#93c5fd',
-          borderRadius: 4,
-          yAxisID: 'y',
-          barPercentage: 0.35,
-          categoryPercentage: 0.85,
-        },
-        {
-          label: lbl.cur + ' 건수',
-          data: vendors.map(k => cur[k]||0),
-          backgroundColor: '#1d4ed8',
-          borderRadius: 4,
-          yAxisID: 'y',
-          barPercentage: 0.35,
-          categoryPercentage: 0.85,
-        },
-        {
-          label: lbl.prev + ' 수량(기)',
-          data: vendors.map(k => Math.round(qPre[k]||0)),
-          backgroundColor: '#c4b5fd',
-          borderRadius: 4,
-          yAxisID: 'y2',
-          barPercentage: 0.35,
-          categoryPercentage: 0.85,
-        },
-        {
-          label: lbl.cur + ' 수량(기)',
-          data: vendors.map(k => Math.round(qCur[k]||0)),
-          backgroundColor: '#7c3aed',
-          borderRadius: 4,
-          yAxisID: 'y2',
-          barPercentage: 0.35,
-          categoryPercentage: 0.85,
-        }
+/* 업체별 계약체결 비교 — 건수(파란계열) + 수량(보라계열) 4개 데이터셋 */
+function drawDocCompChart(canvasId, cur, pre, qCur, qPre, lbl){
+  if(window['_chart_'+canvasId]){ window['_chart_'+canvasId].destroy(); window['_chart_'+canvasId]=null; }
+  const vendors=[...new Set([...Object.keys(cur),...Object.keys(pre)])]
+    .filter(k=>(cur[k]||0)+(pre[k]||0)>0)
+    .sort((a,b)=>(cur[b]||0)-(cur[a]||0));
+  const ctx=document.getElementById(canvasId);
+  if(!ctx) return;
+  window['_chart_'+canvasId]=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:vendors,
+      datasets:[
+        {label:lbl.prev+' 건수', data:vendors.map(k=>pre[k]||0),           backgroundColor:'#93c5fd', borderRadius:4, yAxisID:'y',  barPercentage:0.35, categoryPercentage:0.85},
+        {label:lbl.cur +' 건수', data:vendors.map(k=>cur[k]||0),           backgroundColor:'#1d4ed8', borderRadius:4, yAxisID:'y',  barPercentage:0.35, categoryPercentage:0.85},
+        {label:lbl.prev+' 수량(기)', data:vendors.map(k=>Math.round(qPre[k]||0)), backgroundColor:'#c4b5fd', borderRadius:4, yAxisID:'y2', barPercentage:0.35, categoryPercentage:0.85},
+        {label:lbl.cur +' 수량(기)', data:vendors.map(k=>Math.round(qCur[k]||0)), backgroundColor:'#7c3aed', borderRadius:4, yAxisID:'y2', barPercentage:0.35, categoryPercentage:0.85},
       ]
     },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { position: 'top', labels: { font: { size: 11 } } },
-        tooltip: {
-          callbacks: {
-            label: ctx => {
-              const v = ctx.parsed.y;
-              return ctx.dataset.label.includes('수량')
-                ? ` ${ctx.dataset.label}: ${v.toLocaleString()}기`
-                : ` ${ctx.dataset.label}: ${v.toLocaleString()}건`;
-            }
-          }
-        }
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'top',labels:{font:{size:11}}},
+        tooltip:{callbacks:{label:ctx=>{
+          const v=ctx.parsed.y;
+          return ctx.dataset.label.includes('수량')
+            ? ` ${ctx.dataset.label}: ${v.toLocaleString()}기`
+            : ` ${ctx.dataset.label}: ${v.toLocaleString()}건`;
+        }}}
       },
-      scales: {
-        x: { stacked: false },
-        y: {
-          stacked: false,
-          position: 'left',
-          beginAtZero: true,
-          title: { display: true, text: '계약건(건)', color: '#1d4ed8' },
-          ticks: { color: '#1d4ed8', font: { size: 11 } }
-        },
-        y2: {
-          stacked: false,
-          position: 'right',
-          beginAtZero: true,
-          grid: { drawOnChartArea: false },
-          title: { display: true, text: '계약수량(기)', color: '#7c3aed' },
-          ticks: { color: '#7c3aed', font: { size: 11 } }
-        }
+      scales:{
+        x:{stacked:false},
+        y:{stacked:false,position:'left',beginAtZero:true,
+          title:{display:true,text:'계약건(건)',color:'#1d4ed8'},
+          ticks:{color:'#1d4ed8',font:{size:11}}},
+        y2:{stacked:false,position:'right',beginAtZero:true,
+          grid:{drawOnChartArea:false},
+          title:{display:true,text:'계약수량(기)',color:'#7c3aed'},
+          ticks:{color:'#7c3aed',font:{size:11}}}
       }
     }
   });
@@ -1045,8 +878,8 @@ function drawCompChart(id, cur, pre, lbl){
   charts[id]=new Chart($(id),{
     type:'bar',
     data:{labels,datasets:[
-      {label:lbl.prev, data:labels.map(l=>pre[l]||0), backgroundColor:'#cbd5e1'},
-      {label:lbl.cur,  data:labels.map(l=>cur[l]||0), backgroundColor:'#2563eb'}
+      {label:lbl.prev, data:labels.map(l=>pre[l]||0), backgroundColor:'#cbd5e1', borderRadius:4},
+      {label:lbl.cur,  data:labels.map(l=>cur[l]||0), backgroundColor:'#2563eb', borderRadius:4}
     ]},
     options:{maintainAspectRatio:false,scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}
   });
@@ -1080,46 +913,42 @@ function drawOverviewChart(tSC,tSP,tIC,tIP,tDC,tDP,tQC,tQP,lbl){
 
 function drawGoalChart(tSC,tIC,tDC,tQC){
   if(charts['barGoal']) charts['barGoal'].destroy();
-  const today     = new Date();
-  const yearStart = new Date(today.getFullYear(), 0, 1);
-  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
-  const elapsedWeeks = Math.ceil((today - yearStart) / msPerWeek);
+  const today=new Date();
+  const yearStart=new Date(today.getFullYear(),0,1);
+  const msPerWeek=7*24*60*60*1000;
+  const elapsedWeeks=Math.ceil((today-yearStart)/msPerWeek);
   const GOAL_W_SITE=50, GOAL_W_INS=50, GOAL_W_DOC=50, GOAL_W_QTY=250;
   let goalSite, goalIns, goalDoc, goalQty;
-
   if(mode==='week'){
     goalSite=GOAL_W_SITE; goalIns=GOAL_W_INS; goalDoc=GOAL_W_DOC; goalQty=GOAL_W_QTY;
   } else if(mode==='biweek'){
     goalSite=GOAL_W_SITE*2; goalIns=GOAL_W_INS*2; goalDoc=GOAL_W_DOC*2; goalQty=GOAL_W_QTY*2;
   } else if(mode==='month'){
-    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-    const wInMonth   = Math.ceil((today - monthStart) / msPerWeek);
+    const monthStart=new Date(today.getFullYear(),today.getMonth(),1);
+    const wInMonth=Math.ceil((today-monthStart)/msPerWeek);
     goalSite=GOAL_W_SITE*wInMonth; goalIns=GOAL_W_INS*wInMonth;
     goalDoc=GOAL_W_DOC*wInMonth;   goalQty=GOAL_W_QTY*wInMonth;
   } else if(mode==='quarter'){
-    const q      = Math.floor(today.getMonth()/3);
-    const qStart = new Date(today.getFullYear(), q*3, 1);
-    const wInQ   = Math.ceil((today - qStart) / msPerWeek);
+    const q=Math.floor(today.getMonth()/3);
+    const qStart=new Date(today.getFullYear(),q*3,1);
+    const wInQ=Math.ceil((today-qStart)/msPerWeek);
     goalSite=GOAL_W_SITE*wInQ; goalIns=GOAL_W_INS*wInQ;
     goalDoc=GOAL_W_DOC*wInQ;   goalQty=GOAL_W_QTY*wInQ;
   } else {
     goalSite=GOAL_W_SITE*elapsedWeeks; goalIns=GOAL_W_INS*elapsedWeeks;
     goalDoc=GOAL_W_DOC*elapsedWeeks;   goalQty=GOAL_W_QTY*elapsedWeeks;
   }
-
-  const goals   = [goalSite, goalIns, goalDoc, goalQty];
-  const actuals = [tSC, tIC, tDC, tQC];
-  const labels  = ['현장등록','현장실사','계약체결(건)','계약수량(기)'];
-  const barColors = ['#1d4ed8','#065f46','#92400e','#4c1d95'];
-  const pcts = actuals.map((a,i)=>goals[i]?Math.round(a/goals[i]*100):0);
-
-  const weekLabel = mode==='week'    ? '주간 목표'
-                  : mode==='biweek'  ? '2주간 목표'
-                  : mode==='month'   ? `${today.getMonth()+1}월 누적 목표`
-                  : mode==='quarter' ? `${Math.floor(today.getMonth()/3)+1}분기 누적 목표`
-                  : `${elapsedWeeks}주차 누적 목표`;
+  const goals=[goalSite,goalIns,goalDoc,goalQty];
+  const actuals=[tSC,tIC,tDC,tQC];
+  const labels=['현장등록','현장실사','계약체결(건)','계약수량(기)'];
+  const barColors=['#1d4ed8','#065f46','#92400e','#4c1d95'];
+  const pcts=actuals.map((a,i)=>goals[i]?Math.round(a/goals[i]*100):0);
+  const weekLabel=mode==='week'?'주간 목표'
+    :mode==='biweek'?'2주간 목표'
+    :mode==='month'?`${today.getMonth()+1}월 누적 목표`
+    :mode==='quarter'?`${Math.floor(today.getMonth()/3)+1}분기 누적 목표`
+    :`${elapsedWeeks}주차 누적 목표`;
   $('chartGoalLabel').textContent=`목표 달성률 (${weekLabel} 기준)`;
-
   charts['barGoal']=new Chart($('barGoal'),{
     type:'bar',
     data:{
@@ -1136,6 +965,86 @@ function drawGoalChart(tSC,tIC,tDC,tQC){
         tooltip:{callbacks:{afterLabel:ctx=>ctx.datasetIndex===1?`달성률: ${pcts[ctx.dataIndex]}%`:''}}
       },
       scales:{y:{beginAtZero:true}}
+    }
+  });
+}
+
+/* 영업채널별 계약건 및 수량 — 업체별 막대 2개 (건수 / 수량) */
+function drawVendorChart(cur, qtyMap, lbl){
+  if(window._chartBarVendor){ window._chartBarVendor.destroy(); window._chartBarVendor=null; }
+  if(window._chartPieVendor){ window._chartPieVendor.destroy(); window._chartPieVendor=null; }
+
+  const vendors=Object.keys(cur)
+    .filter(k=>(cur[k]||0)>0||(qtyMap[k]||0)>0)
+    .sort((a,b)=>(qtyMap[b]||0)-(qtyMap[a]||0));
+  const counts=vendors.map(k=>cur[k]||0);
+  const qtys  =vendors.map(k=>Math.round(qtyMap[k]||0));
+
+  const titleEl=$('chartVendorLabel');
+  if(titleEl) titleEl.textContent=`영업채널별 계약건 및 수량 (${lbl.cur})`;
+
+  const ctx1=$('barVendor');
+  if(ctx1){
+    window._chartBarVendor=new Chart(ctx1,{
+      type:'bar',
+      data:{
+        labels:vendors,
+        datasets:[
+          {label:'계약건(건)',  data:counts, backgroundColor:'#3b82f6', borderRadius:4,
+           yAxisID:'y',  barPercentage:0.4, categoryPercentage:0.8},
+          {label:'계약수량(기)',data:qtys,   backgroundColor:'#8b5cf6', borderRadius:4,
+           yAxisID:'y2', barPercentage:0.4, categoryPercentage:0.8}
+        ]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false, indexAxis:'y',
+        plugins:{
+          legend:{position:'top',labels:{font:{size:11}}},
+          tooltip:{callbacks:{label:ctx=>{
+            const v=ctx.parsed.x;
+            return ctx.dataset.label==='계약건(건)'
+              ? ` 계약건: ${v.toLocaleString()}건`
+              : ` 계약수량: ${v.toLocaleString()}기`;
+          }}}
+        },
+        scales:{
+          x:{stacked:false, beginAtZero:true, display:false},
+          y:{stacked:false, position:'left',
+            ticks:{font:{size:12},color:'#3b82f6'},
+            title:{display:true,text:'계약건(건)',color:'#3b82f6'}},
+          y2:{stacked:false, position:'right',
+            grid:{drawOnChartArea:false},
+            ticks:{font:{size:12},color:'#8b5cf6'},
+            title:{display:true,text:'계약수량(기)',color:'#8b5cf6'}}
+        }
+      }
+    });
+  }
+
+  /* 도넛 — 수량 비중 */
+  const ctx2=$('pieVendor');
+  if(!ctx2) return;
+  const palette=['#8b5cf6','#3b82f6','#10b981','#f59e0b','#ef4444','#ec4899','#14b8a6','#f97316'];
+  window._chartPieVendor=new Chart(ctx2,{
+    type:'doughnut',
+    data:{
+      labels:vendors,
+      datasets:[{
+        data:qtys,
+        backgroundColor:vendors.map((_,i)=>palette[i%palette.length]),
+        borderWidth:2, borderColor:'#fff'
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'right',labels:{font:{size:12}}},
+        tooltip:{callbacks:{label:ctx=>{
+          const total=ctx.dataset.data.reduce((a,b)=>a+b,0);
+          const pct=total>0?((ctx.parsed/total)*100).toFixed(1):0;
+          return ` ${ctx.label}: ${ctx.parsed.toLocaleString()}기 (${pct}%)`;
+        }}}
+      }
     }
   });
 }
